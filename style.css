@@ -7,6 +7,35 @@
 .door { color: var(--gold); }
 .footprints { color: #789e87; }
 .mobile-dialog-slot, .dialog .mobile-copy { display: none; }
+.secondary { display: block; width: 100%; min-height: 48px; margin-top: 8px; padding: 10px; background: transparent; border: 1px solid #6d8876; border-radius: 7px; color: var(--text); font: inherit; font-size: 14px; }
+.secondary:hover { background: #293d33; }
+.secondary[hidden] { display: none; }
+.code-button { margin-left: auto; margin-right: 20px; min-height: 30px; padding: 5px 10px; border: 1px solid #52665c; border-radius: 7px; background: transparent; color: var(--text); font-size: 12px; }
+.code-button:hover { background: #293d33; }
+.attempt-comparison { margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: var(--mint); overflow-wrap: anywhere; }
+.share-button { color: var(--mint); }
+.utility-dialog { width: min(420px, calc(100% - 24px)); max-height: calc(100svh - 24px); padding: 24px; border: 1px solid #6d8876; border-radius: 12px; background: var(--panel); color: var(--text); }
+.utility-dialog::backdrop { background: #08110ddd; backdrop-filter: blur(3px); }
+.utility-dialog h2 { font-size: 28px; margin-bottom: 16px; }
+.utility-dialog p { font-size: 14px; line-height: 1.5; color: var(--muted); }
+.utility-dialog label { display: block; font-size: 14px; margin-bottom: 8px; }
+.utility-dialog input, .utility-dialog textarea { display: block; width: 100%; padding: 12px; border: 1px solid #789e87; border-radius: 7px; background: #101919; color: var(--text); font: inherit; font-size: 16px; }
+.utility-dialog textarea { resize: vertical; max-height: 35svh; }
+.utility-dialog input:focus-visible, .utility-dialog textarea:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.utility-dialog .primary { width: 100%; }
+.utility-dialog .form-message { min-height: 1.5em; font-size: 13px; }
+#code-error { color: #f2aa8c; }
+
+/* Итог расположен рядом с картой даже на компьютере: маршрут остаётся виден.
+   Время и процент — результат партии, а не показатели открытой после неё карты. */
+.finished .mobile-dialog-slot { display: block; }
+.finished .overlay { position: static; display: block; padding: 0; background: none; backdrop-filter: none; }
+.finished .dialog { max-width: none; text-align: left; margin-bottom: 24px; }
+.finished .dialog-icon, .finished .dialog .eyebrow, .finished .dialog-note,
+.finished .controls-block, .finished .tip, .finished .time-track, .finished .muted { display: none; }
+.finished .dialog h2 { font-size: 29px; margin-bottom: 12px; }
+.finished .dialog p:not(.eyebrow) { font-size: 14px; margin-bottom: 18px; }
+.finished .primary { width: 100%; }
 
 /* Высоту отдаём прежде всего карте. svh учитывает раскрытые панели
    мобильного браузера; safe-area не даёт кнопкам попасть под вырез или жесты.
@@ -20,6 +49,7 @@
   .header { padding: 0 0 8px; min-height: 30px; }
   .brand { font-size: 12px; gap: 8px; }
   .brand-icon { font-size: 24px; }
+  .code-button { margin-right: 0; }
   .edition, .intro .eyebrow, .subtitle, footer { display: none; }
   .intro { padding: 0; gap: 8px; min-height: 36px; }
   h1 { font-size: 27px; margin: 0; }
@@ -67,6 +97,7 @@
   .intro { position: absolute; right: max(12px, env(safe-area-inset-right)); top: max(7px, env(safe-area-inset-top)); min-height: 30px; }
   .intro > div { display: none; }
   .quiet { min-height: 30px; padding: 4px 12px; }
+  .code-button { margin-right: 85px; }
   .play-layout { grid-template-columns: minmax(0, 1fr) 196px; grid-template-rows: minmax(0, 1fr); gap: 16px; }
   .sidebar { display: flex; flex-direction: column; justify-content: center; gap: 6px; }
   .time-block { width: 100%; align-self: auto; padding: 6px 12px; }
@@ -82,3 +113,26 @@
   .primary { min-height: 44px; }
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+
+@media (max-width: 760px), (max-height: 500px) and (max-width: 1000px) {
+  .finished .mobile-dialog-slot { grid-column: 2; grid-row: 1 / 3; }
+  .finished .dialog { margin: 0; }
+  .finished .dialog h2 { font-family: inherit; font-size: 18px; margin-bottom: 8px; }
+  .finished .dialog p.mobile-copy { display: none; }
+  .finished .sidebar .time-block, .finished .sidebar .stats { visibility: visible; }
+  .finished .primary, .finished .secondary { min-height: 48px; font-size: 13px; padding: 9px 6px; }
+  .finished .secondary { margin-top: 6px; }
+}
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 1000px) {
+  .finished .sidebar { gap: 6px; }
+  .finished .sidebar .time-block { display: block; padding: 4px 12px; }
+  .finished .time { font-size: 24px; }
+  .finished .sidebar .stats { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+  .finished .stats > div { flex: 1 1 44%; padding: 0; }
+  .finished .stats .attempt-comparison { flex: 0 0 100%; margin: 0; line-height: 1.3; }
+  .finished .dialog { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .finished .dialog h2, .finished .dialog .primary { grid-column: 1 / -1; }
+  .finished .dialog .secondary { margin-top: 0; }
+  .finished .primary, .finished .secondary { min-height: 44px; }
+  .finished .dialog h2 { margin-bottom: 0; }
+}

@@ -16,7 +16,12 @@
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <symbol id="icon-person" viewBox="0 0 24 24">
-        <path d="M15 4a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM9 8h6c1 0 1.6.7 2 1.7l2 5a1.2 1.2 0 0 1-2.2.9L15 12v4l1 6h-3l-1-5-1 5H8l1-6v-4l-1.8 3.6a1.2 1.2 0 0 1-2.2-.9l2-5C7.4 8.7 8 8 9 8Z"/>
+        <path d="M16 3.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0Z"/>
+        <path d="m10.8 7 3.9.8-1.7 6.5-3.4-.7Z"/>
+        <path data-swing="1" data-pivot="12,9" d="m13.3 7.6 3.7 3.5h3.8v2.4H16l-3.8-3.2Z"/>
+        <path data-swing="-1" data-pivot="11,8" d="m10.9 7.3-2.5 3.3-3.7 2-1.2-2 3.3-1.7 2.9-2.1Z"/>
+        <path data-swing="-1" data-pivot="11,13" d="m10.1 12.5 3.5 1-2.3 3.9-4 5.4-2.7-1.5L9 15.7Z"/>
+        <path data-swing="1" data-pivot="12,13" d="m12 12.6 3.1 1.6 1.6 3.2 3.5 3-2 2.1-4.3-3.7-2.3-3.2Z"/>
       </symbol>
       <symbol id="icon-door" viewBox="0 0 24 24">
         <path d="M4 22V9a8 8 0 0 1 16 0v13h-3V9A5 5 0 0 0 7 9v13Z"/>
@@ -31,6 +36,7 @@
   <main class="game">
     <header class="header">
       <a class="brand" href="./index.html" aria-label="Лабиринт — на старт"><span class="brand-icon" aria-hidden="true">▧</span> ЛАБИРИНТ</a>
+      <button id="open-code" class="code-button">Код карты</button>
       <span class="edition">Маленькое приключение</span>
     </header>
     <section class="intro" aria-labelledby="title">
@@ -39,7 +45,7 @@
     </section>
     <section class="play-layout" aria-label="Игра">
       <div class="board-column">
-        <div class="board-top"><span><i class="light-dot"></i> ЭКСПЕДИЦИЯ</span><span>15 × 15</span></div>
+        <div class="board-top"><span><i class="light-dot"></i> <span id="map-label">ЭКСПЕДИЦИЯ</span></span><span>15 × 15</span></div>
         <div class="board-slot">
         <div class="board-wrap">
           <canvas id="board" width="900" height="900" tabindex="0" aria-label="Карта лабиринта. Управляйте стрелками. Бирюзовый человечек — вы, золотая дверь — выход, отпечатки ног — пройденный путь."></canvas>
@@ -51,6 +57,8 @@
               <p id="dialog-copy">Исследуй лабиринт и доберись до золотой двери. Карта открывается по мере движения. У тебя 3 минуты.</p>
               <p id="mobile-copy" class="mobile-copy">Найди дверь за 3 минуты.</p>
               <button id="primary" class="primary">Начать исследование</button>
+              <button id="new-maze" class="secondary" hidden>Новый лабиринт</button>
+              <button id="share" class="secondary share-button" hidden>Поделиться</button>
               <p class="dialog-note">Стрелки на клавиатуре или на экране</p>
             </div>
           </div>
@@ -60,8 +68,8 @@
       </div>
       <aside class="sidebar" aria-label="Показатели и управление">
         <div id="mobile-dialog-slot" class="mobile-dialog-slot"></div>
-        <div class="time-block"><p class="eyebrow">ОСТАЛОСЬ ВРЕМЕНИ</p><div id="time" class="time" role="timer" aria-label="Осталось времени">03:00</div><div class="time-track"><div id="time-bar"></div></div><p class="muted">Одна игра. Три минуты.<br>Только ты и неизвестность.</p></div>
-        <div class="stats"><div><span>Исследовано</span><strong id="explored">0%</strong></div><div><span>Сделано шагов</span><strong id="steps">0</strong></div></div>
+        <div class="time-block"><p id="time-label" class="eyebrow">ОСТАЛОСЬ ВРЕМЕНИ</p><div id="time" class="time" role="timer" aria-label="Осталось времени">03:00</div><div class="time-track"><div id="time-bar"></div></div><p class="muted">Одна игра. Три минуты.<br>Только ты и неизвестность.</p></div>
+        <div class="stats"><div><span>Исследовано</span><strong id="explored">0%</strong></div><div><span>Сделано шагов</span><strong id="steps">0</strong></div><p id="comparison" class="attempt-comparison" hidden></p></div>
         <div class="controls-block"><p class="eyebrow">ВЫБИРАЙ НАПРАВЛЕНИЕ</p><div class="dpad" aria-label="Направление движения">
           <button data-dir="up" class="up" aria-label="Вверх" disabled>↑</button>
           <button data-dir="left" class="left" aria-label="Влево" disabled>←</button>
@@ -76,5 +84,24 @@
     <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
     <noscript><p>Для игры включите JavaScript в браузере.</p></noscript>
   </main>
+  <dialog id="code-dialog" class="utility-dialog" aria-labelledby="code-title">
+    <h2 id="code-title">Открыть карту</h2>
+    <p>Введите код друга — расположение стен и двери будет тем же.</p>
+    <form id="code-form">
+      <label for="map-code">Код карты</label>
+      <input id="map-code" name="code" maxlength="40" placeholder="L1-00000001" autocomplete="off" spellcheck="false" required>
+      <p id="code-error" class="form-message" role="alert"></p>
+      <button type="submit" class="primary">Открыть</button>
+      <button type="button" id="close-code" class="secondary">Отмена</button>
+    </form>
+  </dialog>
+  <dialog id="share-dialog" class="utility-dialog" aria-labelledby="share-title">
+    <h2 id="share-title">Поделиться результатом</h2>
+    <label for="share-text">Текст для отправки</label>
+    <textarea id="share-text" rows="6" readonly></textarea>
+    <p id="share-status" class="form-message" role="status"></p>
+    <button id="copy-share" class="primary">Скопировать</button>
+    <button id="close-share" class="secondary">Закрыть</button>
+  </dialog>
 </body>
 </html>
