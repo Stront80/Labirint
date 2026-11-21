@@ -8,6 +8,7 @@
   <title>Лабиринт — найди свой путь</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="style.css">
+  <script defer src="i18n.js"></script>
   <script defer src="maze.js"></script>
   <script defer src="app.js"></script>
 </head>
@@ -35,15 +36,15 @@
   </svg>
   <main class="game">
     <header class="header">
-      <a class="brand" href="./index.html" aria-label="Лабиринт — на старт"><span class="brand-icon" aria-hidden="true">▧</span> ЛАБИРИНТ</a>
-      <button id="open-code" class="code-button">Код карты</button>
-      <span class="edition">Маленькое приключение</span>
+      <a class="brand" href="./index.html" aria-label="Лабиринт — на старт" data-i18n-aria-label="home"><span class="brand-icon" aria-hidden="true">▧</span> <span data-i18n="brand">ЛАБИРИНТ</span></a>
+      <button id="open-menu" class="code-button" data-i18n="menu" aria-haspopup="dialog">Меню</button>
+      <span class="edition" data-i18n="edition">Маленькое приключение</span>
     </header>
     <section class="intro" aria-labelledby="title">
-      <div><p class="eyebrow">ИДИ НА СВЕТ</p><h1 id="title">Найди свой путь.</h1><p class="subtitle">За каждым поворотом — что-то новое. Где-то впереди — выход.</p></div>
-      <button id="pause" class="quiet" disabled>Пауза <span aria-hidden="true">Ⅱ</span></button>
+      <div><p class="eyebrow" data-i18n="eyebrow">ИДИ НА СВЕТ</p><h1 id="title" data-i18n="heading">Найди свой путь.</h1><p class="subtitle" data-i18n="subtitle">За каждым поворотом — что-то новое. Где-то впереди — выход.</p></div>
+      <button id="pause" class="quiet" disabled><span id="pause-text" data-i18n="pause">Пауза</span> <span class="pause-icon" aria-hidden="true">Ⅱ</span></button>
     </section>
-    <section class="play-layout" aria-label="Игра">
+    <section class="play-layout" aria-label="Игра" data-i18n-aria-label="game">
       <div class="board-column">
         <div class="board-top"><span><i class="light-dot"></i> <span id="map-label">ЭКСПЕДИЦИЯ</span></span><span>15 × 15</span></div>
         <div class="board-slot">
@@ -57,51 +58,88 @@
               <p id="dialog-copy">Исследуй лабиринт и доберись до золотой двери. Карта открывается по мере движения. У тебя 3 минуты.</p>
               <p id="mobile-copy" class="mobile-copy">Найди дверь за 3 минуты.</p>
               <button id="primary" class="primary">Начать исследование</button>
-              <button id="new-maze" class="secondary" hidden>Новый лабиринт</button>
-              <button id="share" class="secondary share-button" hidden>Поделиться</button>
-              <p class="dialog-note">Стрелки на клавиатуре или на экране</p>
+              <button id="new-maze" class="secondary" data-i18n="newMaze" hidden>Новый лабиринт</button>
+              <button id="share" class="secondary share-button" data-i18n="share" hidden>Поделиться</button>
+              <p class="dialog-note" data-i18n="keyboardNote">Стрелки на клавиатуре или на экране</p>
             </div>
           </div>
         </div>
         </div>
-        <div class="legend"><span><svg class="legend-icon person" aria-hidden="true"><use href="#icon-person"/></svg> Вы</span><span><svg class="legend-icon door" aria-hidden="true"><use href="#icon-door"/></svg> Выход</span><span><svg class="legend-icon footprints" aria-hidden="true"><use href="#icon-footprints"/></svg> Следы</span></div>
+        <div class="legend"><span><svg class="legend-icon person" aria-hidden="true"><use href="#icon-person"/></svg> <span data-i18n="you">Вы</span></span><span><svg class="legend-icon door" aria-hidden="true"><use href="#icon-door"/></svg> <span data-i18n="exit">Выход</span></span><span><svg class="legend-icon footprints" aria-hidden="true"><use href="#icon-footprints"/></svg> <span data-i18n="tracks">Следы</span></span></div>
       </div>
-      <aside class="sidebar" aria-label="Показатели и управление">
+      <aside class="sidebar" aria-label="Показатели и управление" data-i18n-aria-label="sidebar">
         <div id="mobile-dialog-slot" class="mobile-dialog-slot"></div>
-        <div class="time-block"><p id="time-label" class="eyebrow">ОСТАЛОСЬ ВРЕМЕНИ</p><div id="time" class="time" role="timer" aria-label="Осталось времени">03:00</div><div class="time-track"><div id="time-bar"></div></div><p class="muted">Одна игра. Три минуты.<br>Только ты и неизвестность.</p></div>
-        <div class="stats"><div><span>Исследовано</span><strong id="explored">0%</strong></div><div><span>Сделано шагов</span><strong id="steps">0</strong></div><p id="comparison" class="attempt-comparison" hidden></p></div>
-        <div class="controls-block"><p class="eyebrow">ВЫБИРАЙ НАПРАВЛЕНИЕ</p><div class="dpad" aria-label="Направление движения">
-          <button data-dir="up" class="up" aria-label="Вверх" disabled>↑</button>
-          <button data-dir="left" class="left" aria-label="Влево" disabled>←</button>
+        <div class="time-block"><p id="time-label" class="eyebrow">ОСТАЛОСЬ ВРЕМЕНИ</p><div id="time" class="time" role="timer" aria-label="Осталось времени">03:00</div><div class="time-track"><div id="time-bar"></div></div><p class="muted" data-i18n="timeNote">Одна игра. Три минуты. Только ты и неизвестность.</p></div>
+        <div class="stats"><div><span data-i18n="explored">Исследовано</span><strong id="explored">0%</strong></div><div><span data-i18n="steps">Сделано шагов</span><strong id="steps">0</strong></div><p id="comparison" class="attempt-comparison" hidden></p></div>
+        <div class="controls-block"><p class="eyebrow" data-i18n="chooseDirection">ВЫБИРАЙ НАПРАВЛЕНИЕ</p><div class="dpad" aria-label="Направление движения" data-i18n-aria-label="direction">
+          <button data-dir="up" class="up" aria-label="Вверх" data-i18n-aria-label="up" disabled>↑</button>
+          <button data-dir="left" class="left" aria-label="Влево" data-i18n-aria-label="left" disabled>←</button>
           <span class="dpad-center" aria-hidden="true">✦</span>
-          <button data-dir="right" class="right" aria-label="Вправо" disabled>→</button>
-          <button data-dir="down" class="down" aria-label="Вниз" disabled>↓</button>
-        </div><p class="control-note">Удерживай, чтобы идти дальше</p></div>
-        <p class="tip"><span aria-hidden="true">✧</span> Твой след остаётся на карте.<br>Он поможет не ходить кругами.</p>
+          <button data-dir="right" class="right" aria-label="Вправо" data-i18n-aria-label="right" disabled>→</button>
+          <button data-dir="down" class="down" aria-label="Вниз" data-i18n-aria-label="down" disabled>↓</button>
+        </div><p class="control-note" data-i18n="hold">Удерживай, чтобы идти дальше</p></div>
+        <p class="tip"><span aria-hidden="true">✧</span> <span class="tip-copy" data-i18n="tip">Твои следы остаются на карте. Они помогут не ходить кругами.</span></p>
       </aside>
     </section>
-    <footer><span>Заблудиться — часть приключения.</span><span>Без спешки. Но помни о времени.</span></footer>
+    <footer><span data-i18n="footer">Заблудиться — часть приключения.</span><span class="authorship">YaCo 2026</span></footer>
     <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
-    <noscript><p>Для игры включите JavaScript в браузере.</p></noscript>
+    <noscript><p>Для игры включите JavaScript в браузере. Enable JavaScript to play.</p></noscript>
   </main>
   <dialog id="code-dialog" class="utility-dialog" aria-labelledby="code-title">
-    <h2 id="code-title">Открыть карту</h2>
-    <p>Введите код друга — расположение стен и двери будет тем же.</p>
-    <form id="code-form">
-      <label for="map-code">Код карты</label>
+    <h2 id="code-title" data-i18n="codeTitle">Открыть карту</h2>
+    <p data-i18n="codeHelp">Введите код друга — расположение стен и двери будет тем же.</p>
+    <form id="code-form" novalidate>
+      <label for="map-code" data-i18n="codeLabel">Код карты</label>
       <input id="map-code" name="code" maxlength="40" placeholder="L1-00000001" autocomplete="off" spellcheck="false" required>
       <p id="code-error" class="form-message" role="alert"></p>
-      <button type="submit" class="primary">Открыть</button>
-      <button type="button" id="close-code" class="secondary">Отмена</button>
+      <button type="submit" class="primary" data-i18n="open">Открыть</button>
+      <button type="button" id="close-code" class="secondary" data-i18n="cancel">Отмена</button>
     </form>
   </dialog>
   <dialog id="share-dialog" class="utility-dialog" aria-labelledby="share-title">
-    <h2 id="share-title">Поделиться результатом</h2>
-    <label for="share-text">Текст для отправки</label>
+    <h2 id="share-title" data-i18n="shareTitle">Поделиться результатом</h2>
+    <label for="share-text" data-i18n="shareTextLabel">Текст для отправки</label>
     <textarea id="share-text" rows="6" readonly></textarea>
     <p id="share-status" class="form-message" role="status"></p>
-    <button id="copy-share" class="primary">Скопировать</button>
-    <button id="close-share" class="secondary">Закрыть</button>
+    <button id="copy-share" class="primary" data-i18n="copy">Скопировать</button>
+    <button id="close-share" class="secondary" data-i18n="close">Закрыть</button>
+  </dialog>
+  <dialog id="menu-dialog" class="utility-dialog menu-dialog" aria-labelledby="menu-title">
+    <h2 id="menu-title" data-i18n="settings">Настройки</h2>
+    <fieldset class="preference-group">
+      <legend data-i18n="language">Язык</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="language" value="ru" checked><span lang="ru">Русский</span></label>
+        <label class="choice"><input type="radio" name="language" value="en"><span lang="en">English</span></label>
+      </div>
+    </fieldset>
+    <fieldset class="preference-group">
+      <legend data-i18n="controls">Управление на телефоне</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="hand" value="right" checked><span data-i18n="rightHand">Для правшей</span></label>
+        <label class="choice"><input type="radio" name="hand" value="left"><span data-i18n="leftHand">Для левшей</span></label>
+      </div>
+      <p class="hand-note" data-i18n="handNote">Стрелки со стороны ведущей руки. Карта не отражается.</p>
+    </fieldset>
+    <div class="menu-links">
+      <button id="open-story" class="menu-link" data-i18n="storyLink">История лабиринта</button>
+      <button id="open-code" class="menu-link" data-i18n="openCode">Код карты</button>
+    </div>
+    <p id="preferences-note" class="preferences-note"></p>
+    <p class="authorship">YaCo 2026</p>
+    <button id="close-menu" class="primary" data-i18n="backGame">К игре</button>
+  </dialog>
+  <dialog id="story-dialog" class="utility-dialog story-dialog" aria-labelledby="story-title">
+    <div class="story-toolbar"><span data-i18n="storyLink">История лабиринта</span><button id="close-story" class="quiet" data-i18n="backMenu">К меню</button></div>
+    <img id="story-art" width="1672" height="941" loading="lazy" decoding="async" alt="" data-i18n-alt="storyAlt">
+    <p id="story-image-error" data-i18n="storyImageError" hidden>Иллюстрация недоступна. Историю можно прочитать ниже.</p>
+    <article class="story-copy">
+      <p class="eyebrow" data-i18n="brand">ЛАБИРИНТ</p>
+      <h2 id="story-title" data-i18n="storyTitle">Вдоль собственных иллюзий</h2>
+      <div id="story-paragraphs"></div>
+      <p class="authorship">YaCo 2026</p>
+      <button id="story-play" class="primary" data-i18n="backGame">К игре</button>
+    </article>
   </dialog>
 </body>
 </html>

@@ -25,6 +25,55 @@
 .utility-dialog .primary { width: 100%; }
 .utility-dialog .form-message { min-height: 1.5em; font-size: 13px; }
 #code-error { color: #f2aa8c; }
+.tip > .tip-copy { color: var(--muted); font-size: 13px; display: inline; margin: 0; }
+.authorship { font-size: 12px; letter-spacing: .12em; color: var(--muted); }
+.preference-group { min-width: 0; border: 0; padding: 0; margin: 0 0 18px; }
+.preference-group legend { padding: 0; margin-bottom: 8px; font-size: 14px; font-weight: 650; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.choices .choice { display: flex; align-items: center; gap: 8px; margin: 0; min-height: 52px; padding: 9px; border: 1px solid #52665c; border-radius: 8px; font-size: 14px; cursor: pointer; }
+.choices .choice:has(input:checked) { border-color: var(--mint); background: #263c31; }
+.choice input { width: 18px; height: 18px; padding: 0; margin: 0; flex-shrink: 0; accent-color: var(--mint); }
+.menu-dialog .hand-note, .menu-dialog .preferences-note { font-size: 12px; line-height: 1.45; margin: 8px 0 0; }
+.menu-dialog .preferences-note { margin: 14px 0 10px; }
+.menu-dialog .authorship { margin: 0 0 16px; font-size: 12px; }
+.menu-links { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.menu-link { min-height: 48px; padding: 10px; border: 1px solid #6d8876; border-radius: 7px; background: transparent; color: var(--mint); font: inherit; font-size: 14px; line-height: 1.35; }
+.menu-link:hover { background: #293d33; }
+.utility-dialog.story-dialog { width: min(760px, calc(100% - 24px)); padding: 0; }
+.story-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; position: sticky; top: 0; z-index: 1; background: var(--panel); border-bottom: 1px solid #405047; }
+.story-toolbar > span { font-size: 14px; color: var(--muted); }
+.story-toolbar .quiet { min-height: 40px; padding: 8px 12px; }
+.story-dialog img { display: block; width: 100%; height: auto; }
+.story-dialog img[hidden] { display: none; }
+.story-copy { padding: 32px 42px; }
+.story-copy h2 { font-size: 42px; line-height: 1.12; margin: 10px 0 28px; }
+.story-copy .eyebrow { font-size: 12px; color: var(--mint); letter-spacing: .16em; }
+.story-copy #story-paragraphs p { font-family: Georgia, 'Times New Roman', serif; font-size: 19px; line-height: 1.8; color: #d3ded4; margin: 0 0 24px; }
+.story-copy #story-paragraphs p:first-child { color: var(--text); font-size: 22px; }
+.story-copy .authorship { margin: 28px 0; font-size: 12px; }
+#story-image-error { margin: 16px; }
+
+@media (max-width: 760px), (max-height: 500px) and (max-width: 1000px) {
+  .quiet #pause-text { display: inline; }
+  .menu-dialog { padding: 20px; }
+  .story-toolbar { padding: 10px 14px; }
+  .story-copy { padding: 24px 20px; }
+  .story-copy h2 { font-size: 34px; }
+  .story-copy #story-paragraphs p { font-size: 17px; line-height: 1.75; }
+  .story-copy #story-paragraphs p:first-child { font-size: 20px; }
+
+  /* Меняем местами только панели. Поле, игрок и смысл стрелок не отражаются. */
+  body[data-hand="left"] .sidebar { grid-template-columns: 164px minmax(0, 1fr); }
+  body[data-hand="left"] .controls-block { grid-column: 1; }
+  body[data-hand="left"] .time-block, body[data-hand="left"] .stats { grid-column: 2; }
+  body[data-hand="left"] .mobile-dialog-slot { grid-column: 2; }
+  body[data-hand="left"] .finished .mobile-dialog-slot { grid-column: 1; }
+}
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 1000px) {
+  body[data-hand="left"] .play-layout { grid-template-columns: 196px minmax(0, 1fr); }
+  body[data-hand="left"] .board-column { grid-column: 2; grid-row: 1; }
+  body[data-hand="left"] .sidebar { grid-column: 1; grid-row: 1; }
+}
 
 /* Итог расположен рядом с картой даже на компьютере: маршрут остаётся виден.
    Время и процент — результат партии, а не показатели открытой после неё карты. */

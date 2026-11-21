@@ -1,0 +1,9 @@
+# Иллюстрация к истории
+
+Создана 2026-11-21 встроенным инструментом image_gen (навык imagegen), без CLI и без внешних ключей пользователя. Основание — подтверждённое поручение реализовать версию 1.4 с рисунком.
+
+Файл проекта: `story.webp`, 1672 × 941, 160168 байт. Сгенерированный оригинал PNG сохранён инструментом в его стандартном каталоге; рабочий WebP получен перекодированием без изменения композиции. Изображение просмотрено: тёмный лабиринт, один путник, светящиеся следы/трещины и золотой выход; надписей нет. Авторство в интерфейсе по поручению пользователя: YaCo 2026. Отдельная правовая экспертиза не проводилась.
+
+## Финальный промпт
+
++Use case: illustration-story. Asset type: wide 16:9 cover illustration for the optional lore screen of a minimal browser maze game. Primary request: a psychologically evocative labyrinth that feels like a state of mind, footsteps as decisions cracking reality, a distant exit revealing an inner realization. Scene: an elevated oblique view into a dark graphite labyrinth, a single subtle human pedestrian silhouette walking, a continuous trail of paired luminous mint footprints becoming delicate hairline fractures in the floor; walls gradually dissolve into mist and impossible space toward one warm golden arched doorway in the distance. Style: refined atmospheric editorial concept illustration, tactile stone, restrained cinematic light, rich shadows with readable detail, poetic and contemplative rather than horror. Palette: graphite #101919, muted deep green stone, pale mint #a8e6c5 trails, gold #f0ce83 doorway. Composition: broad landscape, strong depth and a clear trail leading the eye to the distant door, designed to remain readable as a small mobile story cover. Constraints: no words, no letters, no numbers, no logos, no watermark, no UI, no text overlay, no additional characters, no monsters, not a screenshot, opaque background.

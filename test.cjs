@@ -135,4 +135,37 @@ assert.equal(sharePayload(first, 'file:///tmp/local-game/index.html').url, undef
 assert.equal(sharePayload(first, 'http://127.0.0.1:8080/').url, undefined);
 assert.match(publicShare.text, /L1-0000002A/);
 assert.throws(() => sharePayload(new Game(stable), 'https://example.test/'));
-console.log(`Успешно: 1000 карт + 200 кодов, видимость через проходы, столкновения, повтор, сравнение и данные для отправки. Пути: ${min}–${max} шагов.`);
+// Контракт локализации: переведены все ключи, используемые разметкой,
+// динамическими состояниями, сравнениями и отправкой результата.
+const I18n = require('./i18n.js');
+const fs = require('node:fs');
+const path = require('node:path');
+assert.deepEqual(Object.keys(I18n.messages.ru).sort(), Object.keys(I18n.messages.en).sort());
+for (const [language, dictionary] of Object.entries(I18n.messages)) {
+  for (const [key, value] of Object.entries(dictionary)) {
+    assert.equal(typeof value, 'string'); assert(value.trim(), `${language}.${key} не пуст`);
+    assert(!I18n.t(language, key, { n: 2, unit: 'steps', time: '1:30', steps: 42, explored: 30, code: 'L1-00000001', outcome: 'done' }).includes('{'));
+    if (language === 'en') assert(!/[А-Яа-яЁё]/.test(value), `Русский текст в английском ключе ${key}`);
+  }
+}
+const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+for (const [, key] of html.matchAll(/data-i18n(?:-aria-label|-alt)?="([^"]+)"/g)) {
+  for (const language of ['ru', 'en']) assert(I18n.t(language, key).length > 0);
+}
+assert.equal(I18n.stories.ru.length, 4); assert.equal(I18n.stories.en.length, 4);
+assert.equal(createHash('sha256').update(I18n.stories.ru.join('\n\n')).digest('hex'), '2861399d33b6284db02dfa62649bad57c246059e65b22bfaf4bdb421bf65029d', 'Русская легенда сохранена дословно');
+assert(I18n.stories.en.every(text => !/[А-Яа-яЁё]/.test(text)));
+assert.deepEqual(I18n.normalizePreferences(null), { language: 'ru', hand: 'right' });
+assert.deepEqual(I18n.normalizePreferences({ language: 'en', hand: 'left', extra: 'ignored' }), { language: 'en', hand: 'left' });
+assert.deepEqual(I18n.normalizePreferences({ language: 'unknown', hand: 'wrong' }), { language: 'ru', hand: 'right' });
+const pair = Object.freeze({ previous, current: Object.freeze({ status: 'won', elapsed: 70000, steps: 188, seen: 120 }) });
+const unchanged = JSON.stringify(pair);
+assert.equal(I18n.comparison('ru', pair), 'На 12 шагов меньше, на 20 с быстрее.');
+assert.equal(I18n.comparison('en', pair), '12 fewer steps, 20s faster.');
+assert.equal(JSON.stringify(pair), unchanged, 'Перевод результата не изменяет исходные данные');
+assert.equal(history.recordPair(first), history.recordPair(first), 'Перерисовка использует тот же снимок результата');
+assert.equal(I18n.comparison('ru', history.recordPair(first)), history.record(first));
+const englishShare = I18n.shareText('en', first);
+assert.match(englishShare, /^Labyrinth:/); assert.match(englishShare, /L1-0000002A/); assert(!/[А-Яа-яЁё]/.test(englishShare));
+assert((html.match(/YaCo 2026/g) || []).length >= 3, 'Авторство в меню, истории и подвале');
+console.log(`Успешно: 1000 карт + 200 кодов, правила и обмен картами, RU/EN, точная легенда, сравнения и настройки. Пути: ${min}–${max} шагов.`);

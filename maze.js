@@ -132,18 +132,21 @@
   }
   class AttemptHistory {
     constructor() { this.maps = new Map(); this.recorded = new WeakMap(); }
-    record(game) {
-      if (!game.finished) return '';
+    recordPair(game) {
+      if (!game.finished) return null;
       if (this.recorded.has(game)) return this.recorded.get(game);
       // Сравнимы только одинаковая геометрия и одинаковые условия игры.
       const key = [game.maze.size, game.maze.exit, game.maze.cells.join(','), game.rules.vision, game.rules.durationMs, game.rules.stepMs].join('|');
       const result = Object.freeze({ status: game.status, elapsed: game.elapsed, steps: game.steps, seen: game.seen.size });
-      const text = compareAttempts(this.maps.get(key), result);
+      const pair = Object.freeze({ previous: this.maps.get(key) || null, current: result });
       this.maps.delete(key); this.maps.set(key, result);
       if (this.maps.size > 24) this.maps.delete(this.maps.keys().next().value);
-      this.recorded.set(game, text);
-      return text;
+      this.recorded.set(game, pair);
+      return pair;
     }
+    // Совместимый русский формат для прежних потребителей модели. Интерфейс
+    // использует данные recordPair, чтобы язык можно было сменить после финиша.
+    record(game) { const pair = this.recordPair(game); return pair ? compareAttempts(pair.previous, pair.current) : ''; }
   }
   function sharePayload(game, href) {
     if (!game.finished) throw new Error('Результат доступен после завершения партии');

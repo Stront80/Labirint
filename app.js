@@ -1,7 +1,15 @@
-/* Интерфейс не требует сервера, сети, хранилища или внешних библиотек. */
+/* Игра не требует сервера и библиотек. Локально сохраняются только настройки,
+   результаты попыток остаются в памяти страницы. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
+  const preferencesKey = 'labyrinth.preferences.v1';
+  let preferences = MazeI18n.normalizePreferences(null), preferencesPersistent = true;
+  try {
+    const stored = localStorage.getItem(preferencesKey);
+    if (stored && stored.length <= 256) preferences = MazeI18n.normalizePreferences(JSON.parse(stored));
+  } catch { preferencesPersistent = false; }
+  const t = (key, values) => MazeI18n.t(preferences.language, key, values);
   const canvas = $('board'), ctx = canvas.getContext('2d');
   const buttons = [...document.querySelectorAll('[data-dir]')];
   const keys = { ArrowUp: 'up', ArrowRight: 'right', ArrowDown: 'down', ArrowLeft: 'left' };
@@ -12,7 +20,6 @@
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const motion = { from: 0, startedAt: -Infinity, facing: 1, winAt: null, repaint: false };
   const bump = { position: 0, direction: 'up', startedAt: -Infinity };
-  const boardDescription = canvas.getAttribute('aria-label');
   // Path2D создаётся один раз из тех же контуров, что показаны в легенде.
   // Это исключает различия эмодзи на Android, iOS и компьютере.
   const icons = Object.fromEntries(['person', 'door', 'footprints'].map(name => [name,
@@ -59,7 +66,7 @@
     if (inline) dialog.removeAttribute('aria-modal');
     else dialog.setAttribute('aria-modal', 'true');
     if (focused === $('primary')) focused.focus({ preventScroll: true });
-    if (game.status === 'ready') $('primary').textContent = mobileLayout.matches ? 'Начать' : 'Начать исследование';
+    if (game.status === 'ready') $('primary').textContent = t(mobileLayout.matches ? 'startShort' : 'start');
     requestAnimationFrame(draw);
   }
   function release() {
@@ -157,6 +164,49 @@
     drawPerson(px, py, unit, progress, opening);
     ctx.shadowBlur = 0;
   }
+  function renderStatusText(announce = false) {
+    $('map-label').textContent = t(game.finished ? 'mapOpen' : 'expedition');
+    $('time-label').textContent = t(game.finished ? 'timeSpent' : 'timeLeft');
+    $('time').setAttribute('aria-label', t(game.finished ? 'timerSpent' : 'timerLeft'));
+    canvas.setAttribute('aria-label', t('board') + (game.finished ? ` ${t('boardFinished')}` : ''));
+    $('comparison').textContent = game.finished ? MazeI18n.comparison(preferences.language, attempts.recordPair(game)) : '';
+    const state = game.status === 'playing' ? 'ready' : game.status;
+    $('dialog-icon').textContent = { ready: '✦', paused: 'Ⅱ', won: '✦', lost: '◷' }[state];
+    $('dialog-label').textContent = t(`${state}Label`);
+    $('dialog-title').textContent = t(`${state}Title`);
+    $('dialog-copy').textContent = t(`${state}Copy`);
+    $('mobile-copy').textContent = t(`${state}Short`);
+    $('primary').textContent = t(game.finished ? 'retry' : state === 'paused' ? 'resume' : mobileLayout.matches ? 'startShort' : 'start');
+    if (announce || $('announcement').textContent) {
+      $('announcement').textContent = game.status === 'playing' ? '' : `${t(`${state}Title`)} ${t(`${state}Copy`)}` +
+        (game.finished ? ` ${t('resultAnnouncement', { time: $('time').textContent, steps: game.steps, explored: Math.round(game.seen.size / game.maze.cells.length * 100) })} ${$('comparison').textContent}` : '');
+    }
+  }
+  function applyPreferences() {
+    document.documentElement.lang = preferences.language;
+    document.body.dataset.hand = preferences.hand;
+    document.title = t('title');
+    document.querySelector('meta[name="description"]').content = t('description');
+    document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
+    for (const attribute of ['aria-label', 'alt']) {
+      document.querySelectorAll(`[data-i18n-${attribute}]`).forEach(node => { node.setAttribute(attribute, t(node.getAttribute(`data-i18n-${attribute}`))); });
+    }
+    for (const name of ['language', 'hand']) {
+      document.querySelectorAll(`input[name="${name}"]`).forEach(input => { input.checked = input.value === preferences[name]; });
+    }
+    $('preferences-note').textContent = t(preferencesPersistent ? 'prefsSaved' : 'prefsSession');
+    const paragraphs = MazeI18n.stories[preferences.language].map(text => {
+      const p = document.createElement('p'); p.textContent = text; return p;
+    });
+    $('story-paragraphs').replaceChildren(...paragraphs);
+    if ($('code-error').textContent) $('code-error').textContent = t('codeError');
+    renderStatusText();
+    requestAnimationFrame(draw);
+  }
+  function savePreferences() {
+    try { localStorage.setItem(preferencesKey, JSON.stringify(preferences)); preferencesPersistent = true; }
+    catch { preferencesPersistent = false; }
+  }
   function sync() {
     const seconds = game.finished ? Math.floor(game.elapsed / 1000) : Math.ceil(game.remaining() / 1000);
     $('time').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
@@ -169,10 +219,6 @@
     if (game.status === 'won') { motion.winAt = performance.now(); motion.repaint = true; }
     document.querySelector('.game').dataset.state = game.status;
     document.querySelector('.game').classList.toggle('finished', game.finished);
-    $('map-label').textContent = game.finished ? 'КАРТА ОТКРЫТА' : 'ЭКСПЕДИЦИЯ';
-    $('time-label').textContent = game.finished ? 'ВРЕМЯ ПАРТИИ' : 'ОСТАЛОСЬ ВРЕМЕНИ';
-    $('time').setAttribute('aria-label', game.finished ? 'Время партии' : 'Осталось времени');
-    canvas.setAttribute('aria-label', boardDescription + (game.finished ? ' Партия завершена: вся карта открыта, ваш маршрут отмечен линией.' : ''));
     const active = game.status === 'playing';
     buttons.forEach(button => button.disabled = !active);
     $('pause').disabled = !active;
@@ -180,26 +226,11 @@
     $('new-maze').hidden = !game.finished;
     $('share').hidden = !game.finished;
     $('comparison').hidden = !game.finished;
-    $('comparison').textContent = game.finished ? attempts.record(game) : '';
+    renderStatusText(true);
     placeDialog();
     // Карта исключена из Tab-порядка, пока поверх неё открыто окно.
     canvas.tabIndex = active || game.finished ? 0 : -1;
     if (active) { canvas.focus({ preventScroll: true }); return; }
-    const messages = {
-      ready: ['✦', 'НЕБОЛЬШОЕ ПУТЕШЕСТВИЕ', 'Найди выход.', 'Исследуй лабиринт и доберись до золотой двери. Карта открывается по мере движения. У тебя 3 минуты.', 'Начать исследование'],
-      paused: ['Ⅱ', 'МОЖНО ПЕРЕВЕСТИ ДУХ', 'На паузе.', 'Игра на паузе. Время остановлено, исследованная карта сохранена.', 'Продолжить'],
-      won: ['✦', 'ЭКСПЕДИЦИЯ ЗАВЕРШЕНА', 'Выход найден!', 'Вся карта открыта. Посмотри свой маршрут и попробуй пройти эту карту ещё раз или исследуй новую.', 'Повторить карту'],
-      lost: ['◷', 'ПУТЕШЕСТВИЕ НЕ ЗАКОНЧЕНО', 'Время вышло.', 'Вся карта открыта. Посмотри, где находился выход. Можно повторить эту карту с самого начала или выбрать новую.', 'Повторить карту']
-    };
-    const [icon, label, title, copy, action] = messages[game.status];
-    $('dialog-icon').textContent = icon; $('dialog-label').textContent = label;
-    $('dialog-title').textContent = title; $('dialog-copy').textContent = copy; $('primary').textContent = action;
-    if (mobileLayout.matches && game.status === 'ready') $('primary').textContent = 'Начать';
-    $('mobile-copy').textContent = {
-      ready: 'Найди дверь за 3 минуты.', paused: 'Время остановлено.',
-      won: 'Маршрут на карте.', lost: 'Выход теперь виден.'
-    }[game.status];
-    $('announcement').textContent = `${title} ${copy}` + (game.finished ? ` Время ${$('time').textContent}, шагов ${game.steps}, исследовано ${$('explored').textContent}. ${$('comparison').textContent}` : '');
     $('primary').focus({ preventScroll: true });
     draw();
   }
@@ -235,6 +266,7 @@
   });
   $('open-code').addEventListener('click', () => {
     release(); game.pause(); sync();
+    if ($('menu-dialog').open) $('menu-dialog').close();
     $('map-code').value = game.maze.code;
     $('code-error').textContent = '';
     $('code-dialog').showModal(); $('map-code').select();
@@ -243,13 +275,14 @@
   $('code-form').addEventListener('submit', event => {
     event.preventDefault();
     const maze = MazeCore.fromCode($('map-code').value);
-    if (!maze) { $('code-error').textContent = 'Проверьте код: например, L1-00000001.'; $('map-code').focus(); return; }
+    if (!maze) { $('code-error').textContent = t('codeError'); $('map-code').focus(); return; }
     $('code-dialog').close(); game = new MazeCore.Game(maze); resetView(); game.start(); sync(); draw();
   });
   let sharing = false;
   $('share').addEventListener('click', async () => {
     if (!game.finished || sharing) return;
     const payload = MazeCore.sharePayload(game, location.href);
+    payload.title = t('brandTitle'); payload.text = MazeI18n.shareText(preferences.language, game);
     sharing = true; $('share').disabled = true;
     try {
       if (typeof navigator.share === 'function') {
@@ -258,8 +291,8 @@
       }
       // Без системного меню показываем текст, не копируем и не отправляем
       // ничего автоматически. Пользователь сам выбирает действие и получателя.
-      $('share-text').value = payload.text + (payload.url ? `\n${payload.url}` : '\nОткройте игру и введите этот код кнопкой «Код карты».');
-      $('share-status').textContent = payload.url ? 'Можно скопировать текст вместе со ссылкой.' : 'Локальная версия: делимся кодом карты без пути к файлу.';
+      $('share-text').value = payload.text + (payload.url ? `\n${payload.url}` : `\n${t('shareLocalHelp')}`);
+      $('share-status').textContent = t(payload.url ? 'shareLinkNote' : 'shareLocalNote');
       $('share-dialog').showModal();
     } finally { sharing = false; $('share').disabled = false; }
   });
@@ -267,13 +300,38 @@
     try {
       if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
       await navigator.clipboard.writeText($('share-text').value);
-      $('share-status').textContent = 'Скопировано. Теперь можно отправить другу.';
+      $('share-status').textContent = t('copied');
     } catch {
       $('share-text').focus(); $('share-text').select();
-      $('share-status').textContent = 'Скопируйте выделенный текст вручную.';
+      $('share-status').textContent = t('manualCopy');
     }
   });
   $('close-share').addEventListener('click', () => $('share-dialog').close());
+  $('open-menu').addEventListener('click', () => {
+    release(); game.pause(); sync(); $('menu-dialog').showModal();
+  });
+  $('close-menu').addEventListener('click', () => $('menu-dialog').close());
+  for (const name of ['language', 'hand']) {
+    document.querySelectorAll(`input[name="${name}"]`).forEach(input => input.addEventListener('change', () => {
+      if (!input.checked) return;
+      preferences = MazeI18n.normalizePreferences({ ...preferences, [name]: input.value });
+      savePreferences(); applyPreferences();
+    }));
+  }
+  $('open-story').addEventListener('click', () => {
+    $('menu-dialog').close();
+    // Иллюстрация загружается при первом открытии истории, а не перед игрой.
+    if (!$('story-art').getAttribute('src')) $('story-art').src = 'assets/story.webp';
+    $('story-dialog').showModal(); $('story-dialog').scrollTop = 0;
+  });
+  $('close-story').addEventListener('click', () => { $('story-dialog').close(); $('menu-dialog').showModal(); });
+  $('story-play').addEventListener('click', () => $('story-dialog').close());
+  $('story-art').addEventListener('error', () => { $('story-art').hidden = true; $('story-image-error').hidden = false; });
+  for (const id of ['menu-dialog', 'story-dialog', 'code-dialog']) {
+    $(id).addEventListener('close', () => {
+      if (!document.querySelector('dialog[open]') && game.status !== 'playing') $('open-menu').focus({ preventScroll: true });
+    });
+  }
   window.addEventListener('hashchange', () => {
     if (location.hash.length > 80) return;
     const maze = MazeCore.fromCode(new URLSearchParams(location.hash.slice(1)).get('maze'));
@@ -332,5 +390,5 @@
     if (repaint) draw(now);
     requestAnimationFrame(frame);
   }
-  rememberCode(); placeDialog(); sync(); draw(); requestAnimationFrame(frame);
+  rememberCode(); applyPreferences(); placeDialog(); sync(); draw(); requestAnimationFrame(frame);
 })();
