@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101919">
+  <meta name="description" content="Исследуйте скрытый лабиринт и найдите выход за три минуты. Небольшая игра для компьютера и телефона.">
+  <title>Лабиринт — найди свой путь</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="maze.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <main class="game">
+    <header class="header">
+      <a class="brand" href="./index.html" aria-label="Лабиринт — на старт"><span class="brand-icon" aria-hidden="true">▧</span> ЛАБИРИНТ</a>
+      <span class="edition">Маленькое приключение</span>
+    </header>
+    <section class="intro" aria-labelledby="title">
+      <div><p class="eyebrow">ИДИ НА СВЕТ</p><h1 id="title">Найди свой путь.</h1><p class="subtitle">За каждым поворотом — что-то новое. Где-то впереди — выход.</p></div>
+      <button id="pause" class="quiet" disabled>Пауза <span aria-hidden="true">Ⅱ</span></button>
+    </section>
+    <section class="play-layout" aria-label="Игра">
+      <div class="board-column">
+        <div class="board-top"><span><i class="light-dot"></i> ЭКСПЕДИЦИЯ</span><span>15 × 15</span></div>
+        <div class="board-wrap">
+          <canvas id="board" width="900" height="900" tabindex="0" aria-label="Карта лабиринта. Управляйте стрелками клавиатуры. Бирюзовая точка — вы, золотой маяк — выход."></canvas>
+          <div id="overlay" class="overlay">
+            <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-copy">
+              <div id="dialog-icon" class="dialog-icon" aria-hidden="true">✦</div>
+              <p id="dialog-label" class="eyebrow">НЕБОЛЬШОЕ ПУТЕШЕСТВИЕ</p>
+              <h2 id="dialog-title">Не все пути видны сразу.</h2>
+              <p id="dialog-copy">Исследуй лабиринт и доберись до золотого маяка. Карта открывается по мере движения. У тебя 3 минуты.</p>
+              <button id="primary" class="primary">Начать исследование</button>
+              <p class="dialog-note">Стрелки на клавиатуре или на экране</p>
+            </div>
+          </div>
+        </div>
+        <div class="legend"><span><i class="player-dot"></i> Вы</span><span><i class="exit-dot"></i> Выход</span><span><i class="trail-dot"></i> Ваш след</span></div>
+      </div>
+      <aside class="sidebar" aria-label="Показатели и управление">
+        <div class="time-block"><p class="eyebrow">ОСТАЛОСЬ ВРЕМЕНИ</p><div id="time" class="time" role="timer" aria-label="Осталось времени">03:00</div><div class="time-track"><div id="time-bar"></div></div><p class="muted">Одна игра. Три минуты.<br>Только ты и неизвестность.</p></div>
+        <div class="stats"><div><span>Исследовано</span><strong id="explored">0%</strong></div><div><span>Сделано шагов</span><strong id="steps">0</strong></div></div>
+        <div class="controls-block"><p class="eyebrow">ВЫБИРАЙ НАПРАВЛЕНИЕ</p><div class="dpad" aria-label="Направление движения">
+          <button data-dir="up" class="up" aria-label="Вверх" disabled>↑</button>
+          <button data-dir="left" class="left" aria-label="Влево" disabled>←</button>
+          <span class="dpad-center" aria-hidden="true">✦</span>
+          <button data-dir="right" class="right" aria-label="Вправо" disabled>→</button>
+          <button data-dir="down" class="down" aria-label="Вниз" disabled>↓</button>
+        </div><p class="control-note">Удерживай, чтобы идти дальше</p></div>
+        <p class="tip"><span aria-hidden="true">✧</span> Твой след остаётся на карте.<br>Он поможет не ходить кругами.</p>
+      </aside>
+    </section>
+    <footer><span>Заблудиться — часть приключения.</span><span>Без спешки. Но помни о времени.</span></footer>
+    <p id="announcement" class="sr-only" role="status" aria-live="polite"></p>
+    <noscript><p>Для игры включите JavaScript в браузере.</p></noscript>
+  </main>
+</body>
+</html>
