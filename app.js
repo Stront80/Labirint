@@ -5,7 +5,39 @@
   const canvas = $('board'), ctx = canvas.getContext('2d');
   const buttons = [...document.querySelectorAll('[data-dir]')];
   const keys = { ArrowUp: 'up', ArrowRight: 'right', ArrowDown: 'down', ArrowLeft: 'left' };
+  const footprints = new Map();
+  const angles = { up: 0, right: Math.PI / 2, down: Math.PI, left: -Math.PI / 2 };
+  const mobileLayout = window.matchMedia('(max-width: 760px), (max-height: 500px) and (max-width: 1000px)');
+  // Path2D создаётся один раз из тех же контуров, что показаны в легенде.
+  // Это исключает различия эмодзи на Android, iOS и компьютере.
+  const icons = Object.fromEntries(['person', 'door', 'footprints'].map(name => [name,
+    [...document.querySelectorAll(`#icon-${name} path`)].map(path => ({
+      path: new Path2D(path.getAttribute('d')),
+      fill: path.getAttribute('fill'), opacity: Number(path.getAttribute('fill-opacity') || 1)
+    }))
+  ]));
   let game = new MazeCore.Game(), shownStatus, holding = null, heldKey = null, pointerId = null, lastMove = 0;
+  function drawIcon(name, x, y, size, color, angle = 0) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.scale(size / 24, size / 24); ctx.translate(-12, -12);
+    for (const shape of icons[name]) {
+      ctx.fillStyle = shape.fill || color; ctx.globalAlpha = shape.opacity; ctx.fill(shape.path);
+    }
+    ctx.restore();
+  }
+  function placeDialog() {
+    const focused = document.activeElement;
+    document.body.classList.toggle('mobile-ui', mobileLayout.matches);
+    const destination = mobileLayout.matches ? $('mobile-dialog-slot') : document.querySelector('.board-wrap');
+    if ($('overlay').parentElement !== destination) destination.append($('overlay'));
+    // На телефоне это встроенная панель: карта и управление остаются видны.
+    const dialog = document.querySelector('.dialog');
+    dialog.setAttribute('role', mobileLayout.matches ? 'region' : 'dialog');
+    if (mobileLayout.matches) dialog.removeAttribute('aria-modal');
+    else dialog.setAttribute('aria-modal', 'true');
+    if (focused === $('primary')) focused.focus({ preventScroll: true });
+    if (game.status === 'ready') $('primary').textContent = mobileLayout.matches ? 'Начать' : 'Начать исследование';
+    requestAnimationFrame(draw);
+  }
   function release() {
     holding = null; heldKey = null; pointerId = null;
     buttons.forEach(button => button.classList.remove('held'));
@@ -33,17 +65,19 @@
       if (cells[i] & 4) { ctx.moveTo(x, y + unit); ctx.lineTo(x + unit, y + unit); }
       if (cells[i] & 8) { ctx.moveTo(x, y); ctx.lineTo(x, y + unit); }
       ctx.stroke();
-      if (game.trail.has(i)) { ctx.fillStyle = '#6d9a81'; ctx.beginPath(); ctx.arc(cx, cy, unit * .065, 0, Math.PI * 2); ctx.fill(); }
+      if (footprints.has(i) && i !== game.position && i !== exit) {
+        drawIcon('footprints', cx, cy, unit * .61, '#789e87', angles[footprints.get(i)]);
+      }
     }
-    // Маяк виден сквозь туман, чтобы направление цели было понятно с начала.
+    // Дверь видна сквозь туман; свечение не перекрывает её узнаваемый контур.
     const [ex, ey] = point(exit);
-    ctx.save(); ctx.translate(ex, ey); ctx.rotate(Math.PI / 4);
-    ctx.shadowColor = '#f0ce83'; ctx.shadowBlur = unit * .7; ctx.fillStyle = '#f0ce83';
-    ctx.fillRect(-unit * .17, -unit * .17, unit * .34, unit * .34); ctx.restore();
+    ctx.shadowColor = '#f0ce83'; ctx.shadowBlur = unit * .3;
+    drawIcon('door', ex, ey, unit * .85, '#f0ce83');
+    ctx.shadowBlur = 0;
     const [px, py] = point(game.position);
-    ctx.shadowColor = '#a8e6c5'; ctx.shadowBlur = unit * .6;
-    ctx.fillStyle = '#bcf6d7'; ctx.beginPath(); ctx.arc(px, py, unit * .23, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-    ctx.strokeStyle = '#d6fbe7'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(px, py, unit * .34, 0, Math.PI * 2); ctx.stroke();
+    ctx.shadowColor = '#a8e6c5'; ctx.shadowBlur = unit * .2;
+    drawIcon('person', px, py, unit * .86, '#bcf6d7');
+    ctx.shadowBlur = 0;
   }
   function sync() {
     const seconds = Math.ceil(game.remaining() / 1000);
@@ -54,6 +88,7 @@
     $('explored').textContent = `${Math.round(game.seen.size / game.maze.cells.length * 100)}%`;
     if (shownStatus === game.status) return;
     shownStatus = game.status; release();
+    document.querySelector('.game').dataset.state = game.status;
     const active = game.status === 'playing';
     buttons.forEach(button => button.disabled = !active);
     $('pause').disabled = !active;
@@ -62,21 +97,30 @@
     canvas.tabIndex = active ? 0 : -1;
     if (active) { canvas.focus({ preventScroll: true }); return; }
     const messages = {
-      ready: ['✦', 'НЕБОЛЬШОЕ ПУТЕШЕСТВИЕ', 'Не все пути видны сразу.', 'Исследуй лабиринт и доберись до золотого маяка. Карта открывается по мере движения. У тебя 3 минуты.', 'Начать исследование'],
-      paused: ['Ⅱ', 'МОЖНО ПЕРЕВЕСТИ ДУХ', 'Твой путь подождёт.', 'Игра на паузе. Время остановлено, исследованная карта сохранена.', 'Продолжить'],
+      ready: ['✦', 'НЕБОЛЬШОЕ ПУТЕШЕСТВИЕ', 'Найди выход.', 'Исследуй лабиринт и доберись до золотой двери. Карта открывается по мере движения. У тебя 3 минуты.', 'Начать исследование'],
+      paused: ['Ⅱ', 'МОЖНО ПЕРЕВЕСТИ ДУХ', 'На паузе.', 'Игра на паузе. Время остановлено, исследованная карта сохранена.', 'Продолжить'],
       won: ['✦', 'ЭКСПЕДИЦИЯ ЗАВЕРШЕНА', 'Ты нашёл выход!', `Лабиринт пройден за ${Math.floor(game.elapsed / 60000)} мин ${Math.floor(game.elapsed / 1000) % 60} сек. Сделано шагов: ${game.steps}. Отправимся в новое путешествие?`, 'Новый лабиринт'],
       lost: ['◷', 'ПУТЕШЕСТВИЕ НЕ ЗАКОНЧЕНО', 'Время вышло.', `Ты исследовал ${Math.round(game.seen.size / game.maze.cells.length * 100)}% карты. Ещё один лабиринт — ещё один шанс найти путь.`, 'Попробовать снова']
     };
     const [icon, label, title, copy, action] = messages[game.status];
     $('dialog-icon').textContent = icon; $('dialog-label').textContent = label;
     $('dialog-title').textContent = title; $('dialog-copy').textContent = copy; $('primary').textContent = action;
+    if (mobileLayout.matches && game.status === 'ready') $('primary').textContent = 'Начать';
+    $('mobile-copy').textContent = {
+      ready: 'Найди дверь за 3 минуты.', paused: 'Время остановлено.',
+      won: `${game.steps} шагов. Отличный путь!`, lost: 'Новая карта — новый шанс.'
+    }[game.status];
     $('announcement').textContent = `${title} ${copy}`;
     $('primary').focus({ preventScroll: true });
   }
-  function move(direction) { if (game.move(direction)) draw(); sync(); }
+  function move(direction) {
+    const previous = game.position;
+    if (game.move(direction)) { footprints.set(previous, direction); draw(); }
+    sync();
+  }
   function beginHold(direction) { holding = direction; lastMove = performance.now(); move(direction); }
   $('primary').addEventListener('click', () => {
-    if (game.status === 'won' || game.status === 'lost') game = new MazeCore.Game();
+    if (game.status === 'won' || game.status === 'lost') { game = new MazeCore.Game(); footprints.clear(); }
     game.start(); sync(); draw();
   });
   $('pause').addEventListener('click', () => { game.pause(); sync(); });
@@ -84,7 +128,7 @@
     if (!keys[event.key] || event.altKey || event.ctrlKey || event.metaKey) {
       if (event.key === 'Escape' && game.status === 'playing') { game.pause(); sync(); }
       // В модальном окне одно действие: Tab остаётся на нём.
-      if (event.key === 'Tab' && game.status !== 'playing') { event.preventDefault(); $('primary').focus(); }
+      if (event.key === 'Tab' && game.status !== 'playing' && !mobileLayout.matches) { event.preventDefault(); $('primary').focus(); }
       return;
     }
     if (game.status !== 'playing') return;
@@ -107,6 +151,10 @@
   window.addEventListener('blur', () => { release(); game.pause(); sync(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) { release(); game.pause(); sync(); } });
   window.addEventListener('resize', draw);
+  // Размер квадратного поля меняется не только при повороте, но и при
+  // появлении панелей браузера. Наблюдаем реальный CSS-размер Canvas.
+  new ResizeObserver(draw).observe(canvas);
+  mobileLayout.addEventListener('change', placeDialog);
   // Один цикл для таймера и удержания. После потери фокуса накопленные ходы
   // не догоняются: игра приостановлена, скорость не зависит от частоты экрана.
   function frame(now) {
@@ -114,5 +162,5 @@
     if (holding && game.status === 'playing' && now - lastMove >= 145) { lastMove = now; move(holding); }
     sync(); requestAnimationFrame(frame);
   }
-  sync(); draw(); requestAnimationFrame(frame);
+  placeDialog(); sync(); draw(); requestAnimationFrame(frame);
 })();
