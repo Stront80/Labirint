@@ -40,8 +40,10 @@
       shareLocalHelp: 'Откройте игру и введите этот код через меню → «Код карты».', copied: 'Скопировано. Теперь можно отправить другу.', manualCopy: 'Скопируйте выделенный текст вручную.',
       shareResult: 'Лабиринт: {outcome}. Время {time}, шагов {steps}, исследовано {explored}%. Карта {code}.',
       outcomeWon: 'выход найден', outcomeLost: 'время вышло', noCode: 'без кода',
+      sound: 'Звук', music: 'Музыка', effects: 'Эффекты', musicVolume: 'Громкость музыки', effectsVolume: 'Громкость эффектов',
+      audioHelp: 'Звук включается с началом игры и останавливается на паузе.', audioUnavailable: 'Звук недоступен в этом браузере. Можно играть без звука.',
       menu: 'Меню', settings: 'Настройки', language: 'Язык', controls: 'Управление на телефоне', rightHand: 'Для правшей', leftHand: 'Для левшей',
-      handNote: 'Стрелки со стороны ведущей руки. Карта не отражается.', prefsSaved: 'Язык и расположение управления запоминаются на этом устройстве.', prefsSession: 'Выбор действует в этой вкладке.',
+      handNote: 'Стрелки со стороны ведущей руки. Карта не отражается.', prefsSaved: 'Язык, управление и звук запоминаются на этом устройстве.', prefsSession: 'Выбор действует в этой вкладке.',
       storyLink: 'История лабиринта', storyTitle: 'Вдоль собственных иллюзий', backMenu: 'К меню', backGame: 'К игре',
       storyAlt: 'Путник в тёмном лабиринте. Светящиеся отпечатки ног и тонкие трещины ведут к золотой двери.',
       storyImageError: 'Иллюстрация недоступна. Историю можно прочитать ниже.',
@@ -83,8 +85,10 @@
       shareLocalHelp: 'Open the game, then enter this code in Menu → Maze code.', copied: 'Copied. You can send it to a friend.', manualCopy: 'Copy the selected text manually.',
       shareResult: 'Labyrinth: {outcome}. Time {time}, {steps} steps, {explored}% explored. Maze {code}.',
       outcomeWon: 'exit found', outcomeLost: 'time is up', noCode: 'no code',
+      sound: 'Sound', music: 'Music', effects: 'Effects', musicVolume: 'Music volume', effectsVolume: 'Effects volume',
+      audioHelp: 'Sound starts when you play and stops while paused.', audioUnavailable: 'Audio is unavailable in this browser. You can play without sound.',
       menu: 'Menu', settings: 'Settings', language: 'Language', controls: 'Mobile controls', rightHand: 'Right-handed', leftHand: 'Left-handed',
-      handNote: 'Arrows on your preferred side. The maze stays the same.', prefsSaved: 'Language and control layout are remembered on this device.', prefsSession: 'Your choices apply to this tab.',
+      handNote: 'Arrows on your preferred side. The maze stays the same.', prefsSaved: 'Language, controls and sound are remembered on this device.', prefsSession: 'Your choices apply to this tab.',
       storyLink: 'The maze’s story', storyTitle: 'Along your own illusions', backMenu: 'Back to menu', backGame: 'Back to game',
       storyAlt: 'A traveller in a dark labyrinth. Glowing footprints and fine cracks lead towards a golden door.',
       storyImageError: 'The illustration is unavailable. You can still read the story below.',
@@ -104,7 +108,14 @@
       'The exit flares into light not where you want to be, but where you finally understand: all this time, you were walking not through the labyrinth, but along your own illusions.'
     ]
   };
-  const normalizePreferences = value => ({ language: value?.language === 'en' ? 'en' : 'ru', hand: value?.hand === 'left' ? 'left' : 'right' });
+  // Старые настройки языка/руки получают звуковые значения по умолчанию.
+  // Не принимаем строки, NaN и бесконечность за допустимую громкость.
+  const volume = (value, fallback) => typeof value === 'number' && Number.isFinite(value) ? Math.round(Math.max(0, Math.min(100, value))) : fallback;
+  const normalizePreferences = value => ({
+    language: value?.language === 'en' ? 'en' : 'ru', hand: value?.hand === 'left' ? 'left' : 'right',
+    music: value?.music !== false, effects: value?.effects !== false,
+    musicVolume: volume(value?.musicVolume, 35), effectsVolume: volume(value?.effectsVolume, 60)
+  });
   function t(language, key, values = {}) {
     const text = (messages[language] || messages.ru)[key];
     if (typeof text !== 'string') throw new Error(`Unknown translation key: ${key}`);

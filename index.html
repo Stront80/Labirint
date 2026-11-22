@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="style.css">
   <script defer src="i18n.js"></script>
   <script defer src="maze.js"></script>
+  <script defer src="audio.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -120,6 +121,16 @@
         <label class="choice"><input type="radio" name="hand" value="left"><span data-i18n="leftHand">Для левшей</span></label>
       </div>
       <p class="hand-note" data-i18n="handNote">Стрелки со стороны ведущей руки. Карта не отражается.</p>
+    </fieldset>
+    <fieldset class="preference-group sound-settings">
+      <legend data-i18n="sound">Звук</legend>
+      <label class="sound-toggle"><input id="music-enabled" type="checkbox" checked><span data-i18n="music">Музыка</span></label>
+      <label class="volume-label" for="music-volume"><span data-i18n="musicVolume">Громкость музыки</span><output id="music-level" for="music-volume">35%</output></label>
+      <input id="music-volume" type="range" min="0" max="100" step="1" value="35">
+      <label class="sound-toggle"><input id="effects-enabled" type="checkbox" checked><span data-i18n="effects">Эффекты</span></label>
+      <label class="volume-label" for="effects-volume"><span data-i18n="effectsVolume">Громкость эффектов</span><output id="effects-level" for="effects-volume">60%</output></label>
+      <input id="effects-volume" type="range" min="0" max="100" step="1" value="60">
+      <p id="audio-note" class="hand-note" role="status"></p>
     </fieldset>
     <div class="menu-links">
       <button id="open-story" class="menu-link" data-i18n="storyLink">История лабиринта</button>

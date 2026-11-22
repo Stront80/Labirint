@@ -185,3 +185,10 @@
   .finished .primary, .finished .secondary { min-height: 44px; }
   .finished .dialog h2 { margin-bottom: 0; }
 }
+
+/* Настройки звука остаются в прокручиваемом меню, не уменьшая игровое поле. */
+.sound-settings .sound-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: 0; cursor: pointer; }
+.sound-toggle input { width: 20px; height: 20px; margin: 0; padding: 0; accent-color: var(--mint); }
+.sound-settings .volume-label { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.sound-settings input[type="range"] { padding: 0; height: 30px; margin: 0 0 8px; accent-color: var(--mint); cursor: pointer; }
+.sound-settings input:disabled { opacity: .45; cursor: default; }

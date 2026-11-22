@@ -10,6 +10,8 @@
     if (stored && stored.length <= 256) preferences = MazeI18n.normalizePreferences(JSON.parse(stored));
   } catch { preferencesPersistent = false; }
   const t = (key, values) => MazeI18n.t(preferences.language, key, values);
+  const audio = new MazeAudio.Soundscape(window, () => renderAudioPreferences());
+  let warned = false;
   const canvas = $('board'), ctx = canvas.getContext('2d');
   const buttons = [...document.querySelectorAll('[data-dir]')];
   const keys = { ArrowUp: 'up', ArrowRight: 'right', ArrowDown: 'down', ArrowLeft: 'left' };
@@ -182,6 +184,16 @@
         (game.finished ? ` ${t('resultAnnouncement', { time: $('time').textContent, steps: game.steps, explored: Math.round(game.seen.size / game.maze.cells.length * 100) })} ${$('comparison').textContent}` : '');
     }
   }
+  function renderAudioPreferences() {
+    for (const channel of ['music', 'effects']) {
+      $(`${channel}-enabled`).checked = preferences[channel];
+      $(`${channel}-enabled`).disabled = !audio.available;
+      $(`${channel}-volume`).value = preferences[`${channel}Volume`];
+      $(`${channel}-volume`).disabled = !audio.available || !preferences[channel];
+      $(`${channel}-level`).textContent = `${preferences[`${channel}Volume`]}%`;
+    }
+    $('audio-note').textContent = t(audio.available ? 'audioHelp' : 'audioUnavailable');
+  }
   function applyPreferences() {
     document.documentElement.lang = preferences.language;
     document.body.dataset.hand = preferences.hand;
@@ -194,6 +206,7 @@
     for (const name of ['language', 'hand']) {
       document.querySelectorAll(`input[name="${name}"]`).forEach(input => { input.checked = input.value === preferences[name]; });
     }
+    audio.configure(preferences); renderAudioPreferences();
     $('preferences-note').textContent = t(preferencesPersistent ? 'prefsSaved' : 'prefsSession');
     const paragraphs = MazeI18n.stories[preferences.language].map(text => {
       const p = document.createElement('p'); p.textContent = text; return p;
@@ -214,8 +227,14 @@
     document.querySelector('.time-block').classList.toggle('urgent', !game.finished && seconds <= 30);
     $('steps').textContent = game.steps;
     $('explored').textContent = `${Math.round(game.seen.size / game.maze.cells.length * 100)}%`;
+    if (!warned && game.status === 'playing' && seconds <= 30) { warned = true; audio.effect('warning'); }
     if (shownStatus === game.status) return;
     shownStatus = game.status; release();
+    if (game.status === 'playing') audio.play();
+    else {
+      audio.stop();
+      if (game.finished && !document.hidden && document.hasFocus()) audio.effect(game.status);
+    }
     if (game.status === 'won') { motion.winAt = performance.now(); motion.repaint = true; }
     document.querySelector('.game').dataset.state = game.status;
     document.querySelector('.game').classList.toggle('finished', game.finished);
@@ -239,11 +258,13 @@
     if (direction === 'left') motion.facing = -1;
     if (direction === 'right') motion.facing = 1;
     if (game.move(direction)) {
+      audio.effect('step');
       bump.startedAt = -Infinity;
       motion.from = previous; motion.startedAt = performance.now(); motion.repaint = true;
       footprints.set(previous, direction); draw();
     } else {
       if (game.status === 'playing' && MazeCore.DIRECTIONS[direction] && game.maze.cells[previous] & MazeCore.DIRECTIONS[direction][2]) {
+        audio.effect('wall');
         bump.position = previous; bump.direction = direction; bump.startedAt = performance.now();
       }
       draw();
@@ -252,20 +273,21 @@
   }
   function beginHold(direction) { holding = direction; lastMove = performance.now(); move(direction); }
   function resetView() {
+    audio.stop(); warned = false;
     footprints.clear(); motion.from = 0; motion.startedAt = -Infinity; motion.facing = 1; motion.winAt = null;
     motion.repaint = false;
     bump.startedAt = -Infinity; rememberCode();
   }
   $('primary').addEventListener('click', () => {
     if (game.finished) { game = game.retry(); resetView(); }
-    game.start(); sync(); draw();
+    audio.unlock(); game.start(); sync(); draw();
   });
   $('new-maze').addEventListener('click', () => {
     if (!game.finished) return;
-    game = new MazeCore.Game(freshMaze()); resetView(); game.start(); sync(); draw();
+    game = new MazeCore.Game(freshMaze()); resetView(); audio.unlock(); game.start(); sync(); draw();
   });
   $('open-code').addEventListener('click', () => {
-    release(); game.pause(); sync();
+    audio.stop(); release(); game.pause(); sync();
     if ($('menu-dialog').open) $('menu-dialog').close();
     $('map-code').value = game.maze.code;
     $('code-error').textContent = '';
@@ -276,7 +298,7 @@
     event.preventDefault();
     const maze = MazeCore.fromCode($('map-code').value);
     if (!maze) { $('code-error').textContent = t('codeError'); $('map-code').focus(); return; }
-    $('code-dialog').close(); game = new MazeCore.Game(maze); resetView(); game.start(); sync(); draw();
+    $('code-dialog').close(); game = new MazeCore.Game(maze); resetView(); audio.unlock(); game.start(); sync(); draw();
   });
   let sharing = false;
   $('share').addEventListener('click', async () => {
@@ -308,7 +330,7 @@
   });
   $('close-share').addEventListener('click', () => $('share-dialog').close());
   $('open-menu').addEventListener('click', () => {
-    release(); game.pause(); sync(); $('menu-dialog').showModal();
+    audio.stop(); release(); game.pause(); sync(); $('menu-dialog').showModal();
   });
   $('close-menu').addEventListener('click', () => $('menu-dialog').close());
   for (const name of ['language', 'hand']) {
@@ -317,6 +339,17 @@
       preferences = MazeI18n.normalizePreferences({ ...preferences, [name]: input.value });
       savePreferences(); applyPreferences();
     }));
+  }
+  for (const channel of ['music', 'effects']) {
+    const updateSound = () => {
+      preferences = MazeI18n.normalizePreferences({ ...preferences,
+        [channel]: $(`${channel}-enabled`).checked,
+        [`${channel}Volume`]: Number($(`${channel}-volume`).value)
+      });
+      savePreferences(); applyPreferences();
+    };
+    $(`${channel}-enabled`).addEventListener('change', updateSound);
+    $(`${channel}-volume`).addEventListener('input', updateSound);
   }
   $('open-story').addEventListener('click', () => {
     $('menu-dialog').close();
@@ -364,8 +397,8 @@
     for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(type, event => { if (event.pointerId === pointerId) release(); });
     button.addEventListener('contextmenu', event => event.preventDefault());
   });
-  window.addEventListener('blur', () => { release(); game.pause(); sync(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) { release(); game.pause(); sync(); } });
+  window.addEventListener('blur', () => { audio.stop(); release(); game.pause(); sync(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { audio.stop(); release(); game.pause(); sync(); } });
   window.addEventListener('resize', () => draw());
   // Размер квадратного поля меняется не только при повороте, но и при
   // появлении панелей браузера. Наблюдаем реальный CSS-размер Canvas.

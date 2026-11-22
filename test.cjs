@@ -155,9 +155,10 @@ for (const [, key] of html.matchAll(/data-i18n(?:-aria-label|-alt)?="([^"]+)"/g)
 assert.equal(I18n.stories.ru.length, 4); assert.equal(I18n.stories.en.length, 4);
 assert.equal(createHash('sha256').update(I18n.stories.ru.join('\n\n')).digest('hex'), '2861399d33b6284db02dfa62649bad57c246059e65b22bfaf4bdb421bf65029d', 'Русская легенда сохранена дословно');
 assert(I18n.stories.en.every(text => !/[А-Яа-яЁё]/.test(text)));
-assert.deepEqual(I18n.normalizePreferences(null), { language: 'ru', hand: 'right' });
-assert.deepEqual(I18n.normalizePreferences({ language: 'en', hand: 'left', extra: 'ignored' }), { language: 'en', hand: 'left' });
-assert.deepEqual(I18n.normalizePreferences({ language: 'unknown', hand: 'wrong' }), { language: 'ru', hand: 'right' });
+const soundDefaults = { music: true, effects: true, musicVolume: 35, effectsVolume: 60 };
+assert.deepEqual(I18n.normalizePreferences(null), { language: 'ru', hand: 'right', ...soundDefaults });
+assert.deepEqual(I18n.normalizePreferences({ language: 'en', hand: 'left', extra: 'ignored' }), { language: 'en', hand: 'left', ...soundDefaults });
+assert.deepEqual(I18n.normalizePreferences({ language: 'unknown', hand: 'wrong' }), { language: 'ru', hand: 'right', ...soundDefaults });
 const pair = Object.freeze({ previous, current: Object.freeze({ status: 'won', elapsed: 70000, steps: 188, seen: 120 }) });
 const unchanged = JSON.stringify(pair);
 assert.equal(I18n.comparison('ru', pair), 'На 12 шагов меньше, на 20 с быстрее.');
@@ -169,3 +170,9 @@ const englishShare = I18n.shareText('en', first);
 assert.match(englishShare, /^Labyrinth:/); assert.match(englishShare, /L1-0000002A/); assert(!/[А-Яа-яЁё]/.test(englishShare));
 assert((html.match(/YaCo 2026/g) || []).length >= 3, 'Авторство в меню, истории и подвале');
 console.log(`Успешно: 1000 карт + 200 кодов, правила и обмен картами, RU/EN, точная легенда, сравнения и настройки. Пути: ${min}–${max} шагов.`);
+
+assert.deepEqual(I18n.normalizePreferences({ music: false, effects: false, musicVolume: -20, effectsVolume: 500 }),
+  { language: 'ru', hand: 'right', music: false, effects: false, musicVolume: 0, effectsVolume: 100 });
+assert.equal(I18n.normalizePreferences({ musicVolume: NaN }).musicVolume, 35);
+assert.equal(I18n.normalizePreferences({ effectsVolume: 'secret' }).effectsVolume, 60);
+require('./audio.test.cjs');
