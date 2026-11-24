@@ -107,6 +107,16 @@
   </dialog>
   <dialog id="menu-dialog" class="utility-dialog menu-dialog" aria-labelledby="menu-title">
     <h2 id="menu-title" data-i18n="settings">Настройки</h2>
+    <fieldset class="preference-group" aria-describedby="difficulty-help difficulty-warning">
+      <legend data-i18n="difficulty">Сложность</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="difficulty" value="normal" checked><span data-i18n="difficultyNormal">Обычный</span></label>
+        <label class="choice"><input type="radio" name="difficulty" value="hard"><span data-i18n="difficultyHard">Сложный</span></label>
+      </div>
+      <p id="difficulty-help" class="hand-note" data-i18n="difficultyHelp">Обычный — карта и следы сохраняются. Сложный — виден только участок вокруг человечка.</p>
+      <p id="difficulty-warning" class="hand-note" role="status" hidden data-i18n="difficultyWarning">Смена сложности начнёт эту карту заново: время, шаги и маршрут сбросятся.</p>
+      <button id="apply-difficulty" class="secondary" hidden data-i18n="restartDifficulty">Начать заново</button>
+    </fieldset>
     <fieldset class="preference-group">
       <legend data-i18n="language">Язык</legend>
       <div class="choices">

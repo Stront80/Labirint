@@ -10,6 +10,7 @@
       subtitle: 'За каждым поворотом — что-то новое. Где-то впереди — выход.', pause: 'Пауза',
       game: 'Игра', expedition: 'ЭКСПЕДИЦИЯ', mapOpen: 'КАРТА ОТКРЫТА',
       board: 'Карта лабиринта. Управляйте стрелками. Бирюзовый человечек — вы, золотая дверь — выход, отпечатки ног — пройденный путь.',
+      boardHard: 'Сложный режим: комнаты и следы видны только в текущем свете. Дверь видна всегда.',
       boardFinished: 'Партия завершена: вся карта открыта, ваш маршрут отмечен линией.',
       you: 'Вы', exit: 'Выход', tracks: 'Следы', sidebar: 'Показатели и управление',
       timeLeft: 'ОСТАЛОСЬ ВРЕМЕНИ', timeSpent: 'ВРЕМЯ ПАРТИИ', timerLeft: 'Осталось времени', timerSpent: 'Время партии',
@@ -38,12 +39,17 @@
       shareTitle: 'Поделиться результатом', shareTextLabel: 'Текст для отправки', copy: 'Скопировать', close: 'Закрыть',
       shareLinkNote: 'Можно скопировать текст вместе со ссылкой.', shareLocalNote: 'Локальная версия: делимся кодом карты без пути к файлу.',
       shareLocalHelp: 'Откройте игру и введите этот код через меню → «Код карты».', copied: 'Скопировано. Теперь можно отправить другу.', manualCopy: 'Скопируйте выделенный текст вручную.',
-      shareResult: 'Лабиринт: {outcome}. Время {time}, шагов {steps}, исследовано {explored}%. Карта {code}.',
+      shareResult: 'Лабиринт: {outcome}. Сложность: {difficulty}. Время {time}, шагов {steps}, исследовано {explored}%. Карта {code}.',
       outcomeWon: 'выход найден', outcomeLost: 'время вышло', noCode: 'без кода',
       sound: 'Звук', music: 'Музыка', effects: 'Эффекты', musicVolume: 'Громкость музыки', effectsVolume: 'Громкость эффектов',
       audioHelp: 'Звук включается с началом игры и останавливается на паузе.', audioUnavailable: 'Звук недоступен в этом браузере. Можно играть без звука.',
+      difficulty: 'Сложность', difficultyNormal: 'Обычный', difficultyHard: 'Сложный',
+      difficultyHelp: 'Обычный — карта и следы сохраняются. Сложный — виден только участок вокруг человечка.',
+      difficultyWarning: 'Смена сложности начнёт эту карту заново: время, шаги и маршрут сбросятся.', restartDifficulty: 'Начать заново',
+      tipHard: 'За пределами света комнаты и следы исчезают. Запоминай повороты — дверь видна всегда.',
+      pausedCopyHard: 'Игра на паузе. Время остановлено. После продолжения виден только участок вокруг человечка.',
       menu: 'Меню', settings: 'Настройки', language: 'Язык', controls: 'Управление на телефоне', rightHand: 'Для правшей', leftHand: 'Для левшей',
-      handNote: 'Стрелки со стороны ведущей руки. Карта не отражается.', prefsSaved: 'Язык, управление и звук запоминаются на этом устройстве.', prefsSession: 'Выбор действует в этой вкладке.',
+      handNote: 'Стрелки со стороны ведущей руки. Карта не отражается.', prefsSaved: 'Язык, сложность, управление и звук запоминаются на этом устройстве.', prefsSession: 'Выбор действует в этой вкладке.',
       storyLink: 'История лабиринта', storyTitle: 'Вдоль собственных иллюзий', backMenu: 'К меню', backGame: 'К игре',
       storyAlt: 'Путник в тёмном лабиринте. Светящиеся отпечатки ног и тонкие трещины ведут к золотой двери.',
       storyImageError: 'Иллюстрация недоступна. Историю можно прочитать ниже.',
@@ -55,6 +61,7 @@
       subtitle: 'Something new around every corner. An exit somewhere ahead.', pause: 'Pause',
       game: 'Game', expedition: 'EXPLORING', mapOpen: 'MAP REVEALED',
       board: 'Maze map. Use the arrow keys or onscreen arrows. The mint pedestrian is you, the golden door is the exit, and footprints mark your path.',
+      boardHard: 'Hard mode: rooms and footprints are visible only within the current light. The door is always visible.',
       boardFinished: 'The round is over: the entire map is revealed and your route is marked with a line.',
       you: 'You', exit: 'Exit', tracks: 'Footprints', sidebar: 'Stats and controls',
       timeLeft: 'TIME LEFT', timeSpent: 'ROUND TIME', timerLeft: 'Time remaining', timerSpent: 'Time spent',
@@ -83,12 +90,17 @@
       shareTitle: 'Share your result', shareTextLabel: 'Text to share', copy: 'Copy', close: 'Close',
       shareLinkNote: 'Copy the result together with its link.', shareLocalNote: 'Local version: share the maze code without a file path.',
       shareLocalHelp: 'Open the game, then enter this code in Menu → Maze code.', copied: 'Copied. You can send it to a friend.', manualCopy: 'Copy the selected text manually.',
-      shareResult: 'Labyrinth: {outcome}. Time {time}, {steps} steps, {explored}% explored. Maze {code}.',
+      shareResult: 'Labyrinth: {outcome}. Difficulty: {difficulty}. Time {time}, {steps} steps, {explored}% explored. Maze {code}.',
       outcomeWon: 'exit found', outcomeLost: 'time is up', noCode: 'no code',
       sound: 'Sound', music: 'Music', effects: 'Effects', musicVolume: 'Music volume', effectsVolume: 'Effects volume',
       audioHelp: 'Sound starts when you play and stops while paused.', audioUnavailable: 'Audio is unavailable in this browser. You can play without sound.',
+      difficulty: 'Difficulty', difficultyNormal: 'Normal', difficultyHard: 'Hard',
+      difficultyHelp: 'Normal keeps explored rooms and footprints. Hard shows only the area around you.',
+      difficultyWarning: 'Changing difficulty restarts this maze: time, steps and route will reset.', restartDifficulty: 'Start again',
+      tipHard: 'Rooms and footprints disappear outside the light. Remember the turns — the door stays visible.',
+      pausedCopyHard: 'The game is paused. Time has stopped. Only the area around you will be visible when you resume.',
       menu: 'Menu', settings: 'Settings', language: 'Language', controls: 'Mobile controls', rightHand: 'Right-handed', leftHand: 'Left-handed',
-      handNote: 'Arrows on your preferred side. The maze stays the same.', prefsSaved: 'Language, controls and sound are remembered on this device.', prefsSession: 'Your choices apply to this tab.',
+      handNote: 'Arrows on your preferred side. The maze stays the same.', prefsSaved: 'Language, difficulty, controls and sound are remembered on this device.', prefsSession: 'Your choices apply to this tab.',
       storyLink: 'The maze’s story', storyTitle: 'Along your own illusions', backMenu: 'Back to menu', backGame: 'Back to game',
       storyAlt: 'A traveller in a dark labyrinth. Glowing footprints and fine cracks lead towards a golden door.',
       storyImageError: 'The illustration is unavailable. You can still read the story below.',
@@ -108,11 +120,12 @@
       'The exit flares into light not where you want to be, but where you finally understand: all this time, you were walking not through the labyrinth, but along your own illusions.'
     ]
   };
-  // Старые настройки языка/руки получают звуковые значения по умолчанию.
+  // Старые настройки получают обычную сложность и звуковые значения по умолчанию.
   // Не принимаем строки, NaN и бесконечность за допустимую громкость.
   const volume = (value, fallback) => typeof value === 'number' && Number.isFinite(value) ? Math.round(Math.max(0, Math.min(100, value))) : fallback;
   const normalizePreferences = value => ({
     language: value?.language === 'en' ? 'en' : 'ru', hand: value?.hand === 'left' ? 'left' : 'right',
+    difficulty: value?.difficulty === 'hard' ? 'hard' : 'normal',
     music: value?.music !== false, effects: value?.effects !== false,
     musicVolume: volume(value?.musicVolume, 35), effectsVolume: volume(value?.effectsVolume, 60)
   });
@@ -143,6 +156,7 @@
   function shareText(language, game) {
     const seconds = Math.floor(game.elapsed / 1000);
     return t(language, 'shareResult', {
+      difficulty: t(language, game.rules.difficulty === 'hard' ? 'difficultyHard' : 'difficultyNormal'),
       outcome: t(language, game.status === 'won' ? 'outcomeWon' : 'outcomeLost'),
       time: `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`, steps: game.steps,
       explored: Math.round(game.seen.size / game.maze.cells.length * 100), code: game.maze.code || t(language, 'noCode')

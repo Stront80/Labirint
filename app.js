@@ -9,6 +9,7 @@
     const stored = localStorage.getItem(preferencesKey);
     if (stored && stored.length <= 256) preferences = MazeI18n.normalizePreferences(JSON.parse(stored));
   } catch { preferencesPersistent = false; }
+  let pendingDifficulty = preferences.difficulty;
   const t = (key, values) => MazeI18n.t(preferences.language, key, values);
   const audio = new MazeAudio.Soundscape(window, () => renderAudioPreferences());
   let warned = false;
@@ -36,8 +37,9 @@
     window.crypto.getRandomValues(seed);
     return MazeCore.seededMaze(seed[0]);
   }
+  const createGame = maze => new MazeCore.Game(maze, undefined, { difficulty: preferences.difficulty });
   const linkedCode = location.hash.length <= 80 ? new URLSearchParams(location.hash.slice(1)).get('maze') : null;
-  let game = new MazeCore.Game(MazeCore.fromCode(linkedCode) || freshMaze()), shownStatus, holding = null, heldKey = null, pointerId = null, lastMove = 0;
+  let game = createGame(MazeCore.fromCode(linkedCode) || freshMaze()), shownStatus, holding = null, heldKey = null, pointerId = null, lastMove = 0;
   function rememberCode() {
     // replaceState не добавляет запись на каждый повтор и не отправляет запрос.
     try { window.history.replaceState(null, '', `#maze=${game.maze.code}`); } catch { /* file:// может ограничивать History API. */ }
@@ -107,10 +109,10 @@
     ctx.fillStyle = '#142020'; ctx.fillRect(0, 0, w, w);
     const point = index => [pad + (index % size + .5) * unit, pad + (Math.floor(index / size) + .5) * unit];
     // Неисследованные комнаты обозначены едва заметными точками, а не стенами:
-    // готовый маршрут не раскрывается. Посещённые места сохраняют след.
+    // готовый маршрут не раскрывается. В сложном режиме память карты скрыта.
     for (let i = 0; i < cells.length; i++) {
       const [cx, cy] = point(i);
-      if (!game.finished && !game.seen.has(i)) { ctx.fillStyle = '#2c3935'; ctx.fillRect(cx - 1, cy - 1, 2, 2); continue; }
+      if (!game.canSee(i)) { ctx.fillStyle = '#2c3935'; ctx.fillRect(cx - 1, cy - 1, 2, 2); continue; }
       const nearby = !game.finished && game.lit.has(i);
       const x = cx - unit / 2, y = cy - unit / 2;
       ctx.fillStyle = nearby ? '#233c32' : '#1c2c27'; ctx.fillRect(x, y, unit, unit);
@@ -143,7 +145,7 @@
       ctx.stroke();
     }
     for (const [index, direction] of footprints) {
-      if (index !== game.position && index !== exit) {
+      if (game.canSee(index) && index !== game.position && index !== exit) {
         const [x, y] = point(index); drawIcon('footprints', x, y, unit * .61, '#789e87', angles[direction]);
       }
     }
@@ -170,17 +172,20 @@
     $('map-label').textContent = t(game.finished ? 'mapOpen' : 'expedition');
     $('time-label').textContent = t(game.finished ? 'timeSpent' : 'timeLeft');
     $('time').setAttribute('aria-label', t(game.finished ? 'timerSpent' : 'timerLeft'));
-    canvas.setAttribute('aria-label', t('board') + (game.finished ? ` ${t('boardFinished')}` : ''));
+    const hard = game.rules.difficulty === 'hard';
+    canvas.setAttribute('aria-label', t('board') + (game.finished ? ` ${t('boardFinished')}` : hard ? ` ${t('boardHard')}` : ''));
+    document.querySelector('.tip-copy').textContent = t(hard ? 'tipHard' : 'tip');
     $('comparison').textContent = game.finished ? MazeI18n.comparison(preferences.language, attempts.recordPair(game)) : '';
     const state = game.status === 'playing' ? 'ready' : game.status;
     $('dialog-icon').textContent = { ready: '✦', paused: 'Ⅱ', won: '✦', lost: '◷' }[state];
     $('dialog-label').textContent = t(`${state}Label`);
     $('dialog-title').textContent = t(`${state}Title`);
-    $('dialog-copy').textContent = t(`${state}Copy`);
+    const copy = t(state === 'paused' && hard ? 'pausedCopyHard' : `${state}Copy`);
+    $('dialog-copy').textContent = copy;
     $('mobile-copy').textContent = t(`${state}Short`);
     $('primary').textContent = t(game.finished ? 'retry' : state === 'paused' ? 'resume' : mobileLayout.matches ? 'startShort' : 'start');
     if (announce || $('announcement').textContent) {
-      $('announcement').textContent = game.status === 'playing' ? '' : `${t(`${state}Title`)} ${t(`${state}Copy`)}` +
+      $('announcement').textContent = game.status === 'playing' ? '' : `${t(`${state}Title`)} ${copy}` +
         (game.finished ? ` ${t('resultAnnouncement', { time: $('time').textContent, steps: game.steps, explored: Math.round(game.seen.size / game.maze.cells.length * 100) })} ${$('comparison').textContent}` : '');
     }
   }
@@ -206,6 +211,7 @@
     for (const name of ['language', 'hand']) {
       document.querySelectorAll(`input[name="${name}"]`).forEach(input => { input.checked = input.value === preferences[name]; });
     }
+    renderDifficulty();
     audio.configure(preferences); renderAudioPreferences();
     $('preferences-note').textContent = t(preferencesPersistent ? 'prefsSaved' : 'prefsSession');
     const paragraphs = MazeI18n.stories[preferences.language].map(text => {
@@ -284,7 +290,7 @@
   });
   $('new-maze').addEventListener('click', () => {
     if (!game.finished) return;
-    game = new MazeCore.Game(freshMaze()); resetView(); audio.unlock(); game.start(); sync(); draw();
+    game = createGame(freshMaze()); resetView(); audio.unlock(); game.start(); sync(); draw();
   });
   $('open-code').addEventListener('click', () => {
     audio.stop(); release(); game.pause(); sync();
@@ -298,7 +304,7 @@
     event.preventDefault();
     const maze = MazeCore.fromCode($('map-code').value);
     if (!maze) { $('code-error').textContent = t('codeError'); $('map-code').focus(); return; }
-    $('code-dialog').close(); game = new MazeCore.Game(maze); resetView(); audio.unlock(); game.start(); sync(); draw();
+    $('code-dialog').close(); game = createGame(maze); resetView(); audio.unlock(); game.start(); sync(); draw();
   });
   let sharing = false;
   $('share').addEventListener('click', async () => {
@@ -329,8 +335,32 @@
     }
   });
   $('close-share').addEventListener('click', () => $('share-dialog').close());
+  // Выбор в меню — только черновик. Настройки и партия меняются одним
+  // явным действием; закрытие меню (включая Escape) отменяет черновик.
+  function renderDifficulty() {
+    document.querySelectorAll('input[name="difficulty"]').forEach(input => { input.checked = input.value === pendingDifficulty; });
+    const changed = pendingDifficulty !== game.rules.difficulty;
+    $('difficulty-warning').hidden = !changed;
+    $('apply-difficulty').hidden = !changed;
+  }
+  document.querySelectorAll('input[name="difficulty"]').forEach(input => input.addEventListener('change', () => {
+    if (!input.checked) return;
+    pendingDifficulty = input.value; renderDifficulty();
+  }));
+  $('menu-dialog').addEventListener('close', () => {
+    pendingDifficulty = preferences.difficulty; renderDifficulty();
+  });
+  $('apply-difficulty').addEventListener('click', () => {
+    if (pendingDifficulty === game.rules.difficulty) return;
+    release();
+    preferences = MazeI18n.normalizePreferences({ ...preferences, difficulty: pendingDifficulty });
+    savePreferences();
+    game = createGame(game.maze); resetView(); applyPreferences();
+    $('menu-dialog').close(); audio.unlock(); game.start(); sync(); draw();
+  });
   $('open-menu').addEventListener('click', () => {
-    audio.stop(); release(); game.pause(); sync(); $('menu-dialog').showModal();
+    audio.stop(); release(); game.pause(); sync();
+    pendingDifficulty = preferences.difficulty; renderDifficulty(); $('menu-dialog').showModal();
   });
   $('close-menu').addEventListener('click', () => $('menu-dialog').close());
   for (const name of ['language', 'hand']) {
@@ -369,7 +399,7 @@
     if (location.hash.length > 80) return;
     const maze = MazeCore.fromCode(new URLSearchParams(location.hash.slice(1)).get('maze'));
     if (!maze || maze.code === game.maze.code) return;
-    release(); game = new MazeCore.Game(maze); resetView(); sync(); draw();
+    release(); game = createGame(maze); resetView(); sync(); draw();
   });
   $('pause').addEventListener('click', () => { game.pause(); sync(); });
   document.addEventListener('keydown', event => {

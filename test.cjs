@@ -98,6 +98,44 @@ assert.equal(explorer.move('up'), false);
 assert.equal(explorer.steps, wallSteps); assert.equal(explorer.route.length, wallRoute);
 assert.deepEqual([...explorer.seen], wallSeen, 'Толчок в стену не исследует новую область');
 
+// В сложном режиме видимость отделена от накопленной памяти исследования.
+const hard = new Game(corridor, () => 0, { difficulty: 'hard' });
+assert.equal(new Game(corridor).rules.difficulty, 'normal');
+assert.equal(new Game(corridor, undefined, { difficulty: 'unknown' }).rules.difficulty, 'normal');
+hard.start(); hard.move('right'); hard.move('down'); hard.move('right');
+assert(hard.seen.has(0)); assert(!hard.canSee(0), 'Комнаты и следы вне света скрыты');
+assert(explorer.canSee(0), 'Обычный режим сохраняет открытые комнаты');
+const exploredCount = hard.seen.size;
+hard.move('left');
+assert(hard.canSee(0), 'Возвращение света снова открывает комнату со следами');
+assert.equal(hard.seen.size, exploredCount, 'Возвращение не уменьшает и не удваивает исследование');
+hard.pause(); assert(hard.canSee(0), 'Пауза сохраняет текущий обзор');
+const hardRetry = hard.retry();
+assert.equal(hardRetry.rules.difficulty, 'hard');
+assert.deepEqual(hardRetry.maze, hard.maze);
+assert.equal(hardRetry.steps, 0); assert.deepEqual(hardRetry.route, [0]);
+assert.equal(hardRetry.remaining(), RULES.durationMs);
+assert(hardRetry.seen.size < hard.seen.size);
+hard.start(); hard.now = () => RULES.durationMs; hard.tick();
+assert.equal(hard.status, 'lost');
+assert(hard.canSee(7), 'После окончания времени открываются даже непосещённые комнаты');
+assert.equal(hard.seen.size, exploredCount, 'Раскрытие карты не увеличивает исследование');
+const hardWinner = new Game(seededMaze(42), () => 0, { difficulty: 'hard' });
+hardWinner.start(); for (const direction of solve(hardWinner.maze)) hardWinner.move(direction);
+assert.equal(hardWinner.status, 'won');
+assert(hardWinner.maze.cells.every((_, i) => hardWinner.canSee(i)), 'После победы открывается вся карта');
+assert.equal(hardWinner.route.length, hardWinner.steps + 1);
+const difficultyHistory = new AttemptHistory();
+function finishDifficulty(difficulty) {
+  const attempt = new Game(seededMaze(42), () => 0, { difficulty });
+  attempt.start(); attempt.now = () => RULES.durationMs; attempt.tick();
+  return difficultyHistory.recordPair(attempt);
+}
+assert.equal(finishDifficulty('normal').previous, null);
+assert.equal(finishDifficulty('hard').previous, null, 'Разные сложности не сравниваются');
+assert(finishDifficulty('hard').previous, 'Повторные попытки одной сложности сравниваются');
+assert(finishDifficulty('normal').previous);
+
 // Коды воспроизводимы, ограничены по формату и закреплены контрольной суммой.
 for (let seed = 0; seed < 200; seed++) {
   const map = seededMaze(seed);
@@ -144,7 +182,7 @@ assert.deepEqual(Object.keys(I18n.messages.ru).sort(), Object.keys(I18n.messages
 for (const [language, dictionary] of Object.entries(I18n.messages)) {
   for (const [key, value] of Object.entries(dictionary)) {
     assert.equal(typeof value, 'string'); assert(value.trim(), `${language}.${key} не пуст`);
-    assert(!I18n.t(language, key, { n: 2, unit: 'steps', time: '1:30', steps: 42, explored: 30, code: 'L1-00000001', outcome: 'done' }).includes('{'));
+    assert(!I18n.t(language, key, { n: 2, unit: 'steps', time: '1:30', steps: 42, explored: 30, code: 'L1-00000001', outcome: 'done', difficulty: 'Normal' }).includes('{'));
     if (language === 'en') assert(!/[А-Яа-яЁё]/.test(value), `Русский текст в английском ключе ${key}`);
   }
 }
@@ -156,9 +194,9 @@ assert.equal(I18n.stories.ru.length, 4); assert.equal(I18n.stories.en.length, 4)
 assert.equal(createHash('sha256').update(I18n.stories.ru.join('\n\n')).digest('hex'), '2861399d33b6284db02dfa62649bad57c246059e65b22bfaf4bdb421bf65029d', 'Русская легенда сохранена дословно');
 assert(I18n.stories.en.every(text => !/[А-Яа-яЁё]/.test(text)));
 const soundDefaults = { music: true, effects: true, musicVolume: 35, effectsVolume: 60 };
-assert.deepEqual(I18n.normalizePreferences(null), { language: 'ru', hand: 'right', ...soundDefaults });
-assert.deepEqual(I18n.normalizePreferences({ language: 'en', hand: 'left', extra: 'ignored' }), { language: 'en', hand: 'left', ...soundDefaults });
-assert.deepEqual(I18n.normalizePreferences({ language: 'unknown', hand: 'wrong' }), { language: 'ru', hand: 'right', ...soundDefaults });
+assert.deepEqual(I18n.normalizePreferences(null), { language: 'ru', hand: 'right', difficulty: 'normal', ...soundDefaults });
+assert.deepEqual(I18n.normalizePreferences({ language: 'en', hand: 'left', extra: 'ignored' }), { language: 'en', hand: 'left', difficulty: 'normal', ...soundDefaults });
+assert.deepEqual(I18n.normalizePreferences({ language: 'unknown', hand: 'wrong' }), { language: 'ru', hand: 'right', difficulty: 'normal', ...soundDefaults });
 const pair = Object.freeze({ previous, current: Object.freeze({ status: 'won', elapsed: 70000, steps: 188, seen: 120 }) });
 const unchanged = JSON.stringify(pair);
 assert.equal(I18n.comparison('ru', pair), 'На 12 шагов меньше, на 20 с быстрее.');
@@ -172,7 +210,12 @@ assert((html.match(/YaCo 2026/g) || []).length >= 3, 'Авторство в ме
 console.log(`Успешно: 1000 карт + 200 кодов, правила и обмен картами, RU/EN, точная легенда, сравнения и настройки. Пути: ${min}–${max} шагов.`);
 
 assert.deepEqual(I18n.normalizePreferences({ music: false, effects: false, musicVolume: -20, effectsVolume: 500 }),
-  { language: 'ru', hand: 'right', music: false, effects: false, musicVolume: 0, effectsVolume: 100 });
+  { language: 'ru', hand: 'right', difficulty: 'normal', music: false, effects: false, musicVolume: 0, effectsVolume: 100 });
+assert.equal(I18n.normalizePreferences({ difficulty: 'hard' }).difficulty, 'hard');
+assert.equal(I18n.normalizePreferences({ difficulty: 'unknown' }).difficulty, 'normal');
+assert.match(I18n.shareText('ru', hardWinner), /Сложность: Сложный/);
+assert.match(I18n.shareText('en', hardWinner), /Difficulty: Hard/);
+assert.match(sharePayload(hardWinner, 'file:///tmp/game/index.html').text, /Сложность: сложный/);
 assert.equal(I18n.normalizePreferences({ musicVolume: NaN }).musicVolume, 35);
 assert.equal(I18n.normalizePreferences({ effectsVolume: 'secret' }).effectsVolume, 60);
 require('./audio.test.cjs');

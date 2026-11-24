@@ -5,7 +5,7 @@
   // Параметры баланса собраны вместе для настройки после живых пробных игр.
   // Лимит и скорость сохранены; vision теперь ограничивает число проходов,
   // а не геометрический радиус, чтобы обзор не проникал сквозь стены.
-  const RULES = Object.freeze({ size: 15, pathMin: 100, pathMax: 130, vision: 2.5, durationMs: 180000, stepMs: 145 });
+  const RULES = Object.freeze({ difficulty: 'normal', size: 15, pathMin: 100, pathMax: 130, vision: 2.5, durationMs: 180000, stepMs: 145 });
   function generate(random = Math.random, size = RULES.size, range = RULES) {
     const cells = Array(size * size).fill(15);
     const visited = new Set([0]);
@@ -79,11 +79,14 @@
   class Game {
     constructor(maze = generate(), now = () => performance.now(), rules = RULES) {
       this.maze = { ...maze, cells: [...maze.cells] }; this.now = now;
-      this.rules = Object.freeze({ ...RULES, ...rules }); this.position = 0; this.steps = 0;
+      this.rules = Object.freeze({ ...RULES, ...rules, difficulty: rules.difficulty === 'hard' ? 'hard' : 'normal' }); this.position = 0; this.steps = 0;
       this.status = 'ready'; this.elapsed = 0; this.startedAt = 0;
       this.seen = new Set(); this.trail = new Set([0]); this.route = [0]; this.reveal();
     }
     get finished() { return this.status === 'won' || this.status === 'lost'; }
+    // Память исследования хранится в seen для статистики даже в темноте.
+    // Один предикат управляет видимостью комнат и следов в обоих режимах.
+    canSee(index) { return this.finished || (this.rules.difficulty === 'hard' ? this.lit : this.seen).has(index); }
     retry() { return new Game(this.maze, this.now, this.rules); }
     reveal() {
       this.lit = visibleRooms(this.maze, this.position, this.rules.vision);
@@ -136,7 +139,7 @@
       if (!game.finished) return null;
       if (this.recorded.has(game)) return this.recorded.get(game);
       // Сравнимы только одинаковая геометрия и одинаковые условия игры.
-      const key = [game.maze.size, game.maze.exit, game.maze.cells.join(','), game.rules.vision, game.rules.durationMs, game.rules.stepMs].join('|');
+      const key = [game.maze.size, game.maze.exit, game.maze.cells.join(','), game.rules.difficulty, game.rules.vision, game.rules.durationMs, game.rules.stepMs].join('|');
       const result = Object.freeze({ status: game.status, elapsed: game.elapsed, steps: game.steps, seen: game.seen.size });
       const pair = Object.freeze({ previous: this.maps.get(key) || null, current: result });
       this.maps.delete(key); this.maps.set(key, result);
@@ -152,7 +155,7 @@
     if (!game.finished) throw new Error('Результат доступен после завершения партии');
     const seconds = Math.floor(game.elapsed / 1000);
     const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-    const payload = { title: 'Лабиринт', text: `Лабиринт: ${game.status === 'won' ? 'выход найден' : 'время вышло'}. Время ${time}, шагов ${game.steps}, исследовано ${Math.round(game.seen.size / game.maze.cells.length * 100)}%. Карта ${game.maze.code || 'без кода'}.` };
+    const payload = { title: 'Лабиринт', text: `Лабиринт: ${game.status === 'won' ? 'выход найден' : 'время вышло'}. Сложность: ${game.rules.difficulty === 'hard' ? 'сложный' : 'обычный'}. Время ${time}, шагов ${game.steps}, исследовано ${Math.round(game.seen.size / game.maze.cells.length * 100)}%. Карта ${game.maze.code || 'без кода'}.` };
     // В сообщение не попадают локальный путь, произвольные параметры запроса
     // или чужие фрагменты URL. Публичный адрес не придумывается для file://.
     try {
